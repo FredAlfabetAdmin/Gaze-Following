@@ -19,11 +19,6 @@ This demo shows you how to interact with Pepper tablet to play a “guess the nu
 The Dialogflow and Webserver pepper tablet should be running. You can start them with:
 [services/dialogflow] python dialogflow.py
 [services/webserver]  python webserver_pepper_tablet.py
-
-to execute:
-open terminal: cd sic_framework\services\dialogflow -> python dialogflow.py
-open terminal: cd sic_framework\services\webserver -> python webserver_pepper_tablet.py
-open terminal: sic_framework\tests\demo_webserver\ -> python demo_pepper_guess_number.py
 """
 
 

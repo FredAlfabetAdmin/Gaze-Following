@@ -23,7 +23,6 @@ The Dialogflow and Webserver pepper tablet should be running. You can start them
 to execute:
 open terminal: cd sic_framework\services\dialogflow -> python dialogflow.py
 open terminal: cd sic_framework\services\webserver -> python webserver_pepper_tablet.py
-open terminal: sic_framework\tests\demo_webserver\ -> python demo_pepper_guess_number.py
 """
 
 

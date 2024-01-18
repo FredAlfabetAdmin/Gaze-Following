@@ -19,11 +19,6 @@ This demo shows you how to interact with Pepper tablet to play a “guess the nu
 The Dialogflow and Webserver pepper tablet should be running. You can start them with:
 [services/dialogflow] python dialogflow.py
 [services/webserver]  python webserver_pepper_tablet.py
-
-to execute:
-open terminal: cd sic_framework\services\dialogflow -> python dialogflow.py
-open terminal: cd sic_framework\services\webserver -> python webserver_pepper_tablet.py
-open terminal: sic_framework\tests\demo_webserver\ -> python demo_pepper_guess_number.py
 """
 
 
@@ -139,8 +134,6 @@ robot_ip = '10.0.0.164'
 # the HTML file to be rendered
 html_file = "demo_pepper_guess_number.html"
 web_url = f'https://{machine_ip}:{port}/'
-web_url = 'https://www.wikipedia.org/'
-#web_url = 'https://www.wikipedia.org/portal/wikipedia.org/assets/img/Wikipedia-logo-v2@1.5x.png'
 # the random number that an user should guess
 rand_int = random.randint(1, 10)
 
@@ -156,8 +149,7 @@ web_server.register_callback(on_button_click)
 
 
 # dialogflow setup
-keyfile_json = json.load(open("gaze-estimation-test-udhr-bc4af1b20449.json"))
-
+keyfile_json = json.load(open("dialogflow-tutorial.json"))
 # local microphone
 # sample_rate_hertz = 44100
 # pepper's micriphone

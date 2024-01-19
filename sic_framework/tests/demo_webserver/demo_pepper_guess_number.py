@@ -21,9 +21,11 @@ The Dialogflow and Webserver pepper tablet should be running. You can start them
 [services/webserver]  python webserver_pepper_tablet.py
 
 to execute:
-open terminal: cd sic_framework\services\dialogflow -> python dialogflow.py
-open terminal: cd sic_framework\services\webserver -> python webserver_pepper_tablet.py
-open terminal: sic_framework\tests\demo_webserver\ -> python demo_pepper_guess_number.py
+# confirm Docker Framework is running
+# confirm TP-Link Wi-Fi
+open terminal: cd sic_framework\services\dialogflow ; python dialogflow.py
+open terminal: cd sic_framework\services\webserver ; python webserver_pepper_tablet.py
+open terminal: cd sic_framework\tests\demo_webserver\ ; python demo_pepper_guess_number.py
 """
 
 
@@ -134,13 +136,18 @@ def on_button_click(message):
 
 
 port = 8080
-machine_ip = '10.0.0.241'
+machine_ip = '10.0.0.240'
+
 robot_ip = '10.0.0.164'
+robot_ip = '10.0.0.180'
+
 # the HTML file to be rendered
 html_file = "demo_pepper_guess_number.html"
 web_url = f'https://{machine_ip}:{port}/'
-web_url = 'https://www.wikipedia.org/'
 #web_url = 'https://www.wikipedia.org/portal/wikipedia.org/assets/img/Wikipedia-logo-v2@1.5x.png'
+arrow_left =  'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/U%2B2190.svg/2560px-U%2B2190.svg.png'
+arrow_right = 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/U%2B2192.svg/2560px-U%2B2192.svg.png'
+flag_empty = 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/White_flag_of_surrender.svg/2560px-White_flag_of_surrender.svg.png'
 # the random number that an user should guess
 rand_int = random.randint(1, 10)
 
@@ -168,6 +175,19 @@ dialogflow = Dialogflow(ip='localhost', conf=conf)
 dialogflow.register_callback(on_dialog)
 dialogflow.connect(pepper.mic)
 
+def show_left():
+    print("showing left")
+    pepper.tablet_display_url.send_message(UrlMessage(arrow_left))
+    time.sleep(4)
+def show_right():
+    print("showing right")
+    pepper.tablet_display_url.send_message(UrlMessage(arrow_right))
+    time.sleep(4)
+def show_empty():
+    print("showing none")
+    pepper.tablet_display_url.send_message(UrlMessage(flag_empty))
+    time.sleep(2)
+
 # send html to Webserver
 with open(html_file) as file:
     data = file.read()
@@ -176,4 +196,12 @@ with open(html_file) as file:
     time.sleep(0.5)
     # once an HTML content has been sent to the web server, a url is sent to Pepper to be displayed
     print("displaying html on Pepper display")
-    pepper.tablet_display_url.send_message(UrlMessage(web_url))
+    #pepper.tablet_display_url.send_message(UrlMessage(web_url))
+
+    for x in range(8):
+        print(f"X: {x}")
+        if random.randint(0,1) == 0:
+            show_left()
+        else:
+            show_right()
+        show_empty()

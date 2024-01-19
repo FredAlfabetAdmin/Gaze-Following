@@ -3,6 +3,7 @@
 *.p
 *.pyc
 *.log
+.history/
 
 # Keep some folders
 !.keepme

@@ -1,0 +1,39 @@
+# Can probably remove ./motions due to force setting of the joints
+
+#------------------------------- Preparations: -------------------------------#
+# Imports
+import time
+from sic_framework.devices.common_naoqi.naoqi_motion import NaoqiIdlePostureRequest
+from sic_framework.devices.common_naoqi.naoqi_motion_recorder import PlayRecording, NaoqiMotionRecording
+from sic_framework.devices.common_naoqi.naoqi_stiffness import Stiffness
+from sic_framework.devices.pepper import Pepper
+
+# Setup
+pepper = None
+chain = ["LShoulderRoll", "RShoulderRoll"]
+
+#------------------------------- Functions: -------------------------------#
+def move_joints(angle = 0, chain = chain):
+    #global pepper
+    pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, angle, 0], recorded_joints=[chain], recorded_times=[[0, 1, 2.5]])))
+
+def move_peppers_left(angle = 1):
+    print("moving peppers left arm")
+    move_joints(angle, chain[0]) # always positive
+
+def move_peppers_right(angle = -1):
+    print("moving peppers right arm")
+    move_joints(angle, chain[1]) # always negative
+
+def move_peppers_static():
+    print("resetting both arms")
+    move_peppers_left(angle = 0)
+    move_peppers_right(angle = 0)
+
+def set_pepper_motion(_pepper):
+    global pepper
+    pepper = _pepper
+
+    # Disable "alive" activity for the whole body and set stiffness of the arm to zero
+    pepper.motion.request(NaoqiIdlePostureRequest("Body", False))
+    pepper.stiffness.request(Stiffness(0.7, chain))

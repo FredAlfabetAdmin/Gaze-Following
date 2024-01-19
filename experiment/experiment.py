@@ -25,6 +25,7 @@ from sic_framework.devices.common_naoqi.naoqi_motion_recorder import NaoqiMotion
 
 from motions import move_peppers_left, move_peppers_right, set_pepper_motion, move_peppers_static
 from tablet import show_tablet_empty, show_tablet_right, show_tablet_vu_logo, show_tablet_left, set_pepper_tablet
+from speech import talk_left, talk_right, set_pepper_speech
 from auxillary import show_current_stage
 
 # Variables
@@ -42,6 +43,7 @@ pepper = Pepper(robot_ip, motion_record_conf = conf)
 show_current_stage("Starting preparations")
 set_pepper_tablet(pepper)
 set_pepper_motion(pepper)
+set_pepper_speech(pepper)
 show_tablet_vu_logo()
 move_peppers_static()
 
@@ -53,9 +55,11 @@ for x in range(8):
     if random.randint(0,1) == 0:
         show_tablet_left()
         move_peppers_right()
+        talk_right()
     else:
         show_tablet_right()
         move_peppers_left()
+        talk_left()
     
     # Reset the Pepper
     show_tablet_empty()

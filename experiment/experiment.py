@@ -1,15 +1,15 @@
-import json
-import numpy as np
-import re
 import random
 import time
 
+'''
 from sic_framework.core.utils import is_sic_instance
 from sic_framework.services.dialogflow.dialogflow import DialogflowConf, \
     GetIntentRequest, RecognitionResult, QueryResult, Dialogflow
 from sic_framework.services.webserver.webserver_pepper_tablet import Webserver, HtmlMessage, WebserverConf, TranscriptMessage, ButtonClicked
 from sic_framework.devices.common_naoqi.pepper_tablet import NaoqiTablet, UrlMessage
 from sic_framework.devices.common_naoqi.naoqi_text_to_speech import NaoqiTextToSpeechRequest
+'''
+from sic_framework.devices.common_naoqi.pepper_tablet import UrlMessage
 from sic_framework.devices import Pepper
 
 """
@@ -65,3 +65,5 @@ for x in range(8):
     else:
         show_right()
     show_empty()
+
+print("fin")

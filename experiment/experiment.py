@@ -18,15 +18,15 @@ open terminal: cd experiment ; python experiment.py
 
 #------------------------------- Preparations: -------------------------------#
 # Imports
-import random
-import time
+import datetime
 from sic_framework.devices import Pepper
 from sic_framework.devices.common_naoqi.naoqi_motion_recorder import NaoqiMotionRecorderConf
 
 from motions import move_peppers_left, move_peppers_right, set_pepper_motion, move_peppers_static
 from tablet import show_tablet_empty, show_tablet_right, show_tablet_vu_logo, show_tablet_left, set_pepper_tablet
 from speech import talk_left, talk_right, set_pepper_speech
-from auxillary import show_current_stage
+from auxillary import show_current_stage, left_or_right
+from randomizer import create_random_trials
 
 # Variables
 port = 8080
@@ -47,28 +47,35 @@ set_pepper_speech(pepper)
 show_tablet_vu_logo()
 move_peppers_static()
 
-# Actual 'experiment'
-show_current_stage("Starting experiment")
-for x in range(8):
-    # Based on (*X*, move, talk and show by condition
-    print(f"X: {x}")
-    if random.randint(0,1) == 0:
-        show_tablet_left()
-        move_peppers_right()
-        talk_right()
+trials = create_random_trials()
+
+current_trial=0
+for trial in trials:
+    print(f"Executing trial: {current_trial}")
+    # To determine the FO/ first modality
+    if trial['first_item'] == 'visual':
+        show_tablet_left if left_or_right(trial['congruent'], trial['direction']) else show_tablet_right()
+    elif trial['first_item'] == 'gesture':
+        move_peppers_left() if left_or_right(trial['congruent'], trial['direction']) else move_peppers_right()
     else:
-        show_tablet_right()
-        move_peppers_left()
-        talk_left()
-    
+        talk_left() if left_or_right(trial['congruent'], trial['direction']) else talk_right()
+
+    # And the GO/secondary item
+    if trial['second_itm'] == 'visual':
+        show_tablet_right() if trial['direction'] == 'right' else show_tablet_left() 
+    elif trial['second_itm'] == 'gesture':
+        move_peppers_left() if trial['direction'] == 'right' else move_peppers_right()
+    else:
+        talk_left() if trial['direction'] == 'right' else talk_right()
+
     # Reset the Pepper
     show_tablet_empty()
     #move_peppers_static()
+    current_trial += 1
 
 # Finalizing
 show_current_stage("Finishing up")
 #move_peppers_static()
 show_tablet_vu_logo()
 
-#'''
 print("fin")

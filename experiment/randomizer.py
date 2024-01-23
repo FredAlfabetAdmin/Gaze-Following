@@ -20,4 +20,5 @@ def create_random_trials():
                         'direction': 'left' if z == 0 else 'right'
                     })
 
-    return random.shuffle(trials)
+    random.shuffle(trials)
+    return trials

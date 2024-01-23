@@ -17,6 +17,10 @@ def move_joints(angle = 0, chain = chain):
     #global pepper
     pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, angle, 0], recorded_joints=[chain], recorded_times=[[0, 1, 2.5]])))
 
+def move_shoulder_pitch():
+    pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0.5, 1, 1.6], recorded_joints=["RShoulderPitch"], recorded_times=[[2, 4, 6]])))
+    pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0.5, 1, 1.6], recorded_joints=["LShoulderPitch"], recorded_times=[[2, 4, 6]])))
+
 def move_peppers_left(angle = 1):
     print("moving peppers left arm")
     move_joints(angle, chain[0]) # always positive
@@ -37,3 +41,5 @@ def set_pepper_motion(_pepper):
     # Disable "alive" activity for the whole body and set stiffness of the arm to zero
     pepper.motion.request(NaoqiIdlePostureRequest("Body", False))
     pepper.stiffness.request(Stiffness(0.7, chain))
+    pepper.stiffness.request(Stiffness(0.7, ["RShoulderPitch","LShoulderPitch"]))
+    move_shoulder_pitch()

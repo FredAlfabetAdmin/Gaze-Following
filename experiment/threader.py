@@ -28,8 +28,11 @@ def await_keypress(thread_stop):
             thread_stop.set()
             break
 
-def timer(thread_stop):
-    while not thread_stop.is_set():
+def timer(thread_stop, delay_time):
+    i = 0
+    while not thread_stop.is_set() or i < 5:
+        i += 1
+        print("i")
         time.sleep(0.1)
 
 def start_listening():
@@ -47,3 +50,12 @@ def start_listening():
 
     return output
 
+def parallel(first_event, second_event):
+    # Create threads for script logic and timer, passing the shared flag
+    script_thread = threading.Thread(target=first_event)
+    timer_thread = threading.Thread(target=second_event)
+
+    script_thread.start()
+    timer_thread.start()
+    script_thread.join()
+    timer_thread.join()

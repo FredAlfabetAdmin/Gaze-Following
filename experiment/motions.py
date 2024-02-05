@@ -42,4 +42,6 @@ def set_pepper_motion(_pepper):
     pepper.motion.request(NaoqiIdlePostureRequest("Body", False))
     pepper.stiffness.request(Stiffness(0.7, chain))
     pepper.stiffness.request(Stiffness(0.7, ["RShoulderPitch","LShoulderPitch"]))
-    move_shoulder_pitch()
+    move_peppers_left()
+    move_peppers_right()
+    #move_shoulder_pitch()

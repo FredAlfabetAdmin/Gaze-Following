@@ -18,10 +18,12 @@ def set_pepper_tablet(_pepper):
 
 def show_tablet_left():
     print("Showing left")
+    time.sleep(0.5)
     pepper.tablet_display_url.send_message(UrlMessage(arrow_left))
     
 def show_tablet_right():
     print("Showing right")
+    time.sleep(0.5)
     pepper.tablet_display_url.send_message(UrlMessage(arrow_right))
     
 def show_tablet_empty():

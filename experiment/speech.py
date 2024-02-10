@@ -27,4 +27,4 @@ def talk_intro(value):
     talk(f"Let's focus on {value}")
 
 def talk_preparations():
-    talk("I am warming up my joints, vocal cords and charging my display.")
+    talk("Confirmation of speech module.")

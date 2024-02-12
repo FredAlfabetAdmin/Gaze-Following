@@ -1,8 +1,8 @@
-import threading
 import time
 import msvcrt
 import datetime
-from experiment.recorder import get_is_currently_recording, stop_video_recording
+import threading
+from recorder import Recorder#, get_is_currently_recording, stop_video_recording
 
 output = ()
 
@@ -37,11 +37,12 @@ def timer(thread_stop):
         time.sleep(0.1)
         i+=1
 
-def start_listening():
+def start_listening(args):
+    video_recorder = args[0]
     # Create a shared flag between the threads
     thread_stop = threading.Event()
 
-    while not get_is_currently_recording():
+    while not video_recorder.get_is_currently_recording():
         print("Not recording yet!")
         time.sleep(0.1)
     # Create threads for script logic and timer, passing the shared flag
@@ -53,14 +54,18 @@ def start_listening():
     script_thread.join()
     timer_thread.join()
 
-    stop_video_recording()
-
     return output
 
-def parallel(first_event, second_event):
+def parallel(first_event, second_event, first_args = None, second_args = None):
     # Create threads for script logic and timer, passing the shared flag
-    script_thread = threading.Thread(target=first_event)
-    timer_thread = threading.Thread(target=second_event)
+    if first_args == None:
+        script_thread = threading.Thread(target=first_event)
+    else:
+        script_thread = threading.Thread(target=first_event, args=(first_args,))
+    if second_args == None:
+        timer_thread = threading.Thread(target=second_event)
+    else:
+        timer_thread = threading.Thread(target=second_event, args=(second_args,))
 
     script_thread.start()
     timer_thread.start()

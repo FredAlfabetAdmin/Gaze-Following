@@ -28,8 +28,8 @@ from tablet import show_tablet_empty, show_tablet_right, show_tablet_vu_logo, sh
 from speech import talk_left, talk_right, set_pepper_speech, talk_intro, talk_preparations
 from auxillary import show_current_stage, left_or_right
 from randomizer import create_random_trials
-from threader import parallel
-from recorder import start_video_recording, stop_video_recording
+from recorder import Recorder#, start_video_recording, stop_video_recording, set_participant_id, set_trial_set, get_is_currently_recording
+from threader import parallel, start_listening
 
 # Variables
 port = 8080
@@ -40,19 +40,32 @@ robot_ip = '10.0.0.164' # Marvin # Has SSL error.
 capture_device = 0
 
 # Pepper device setup
-conf = NaoqiMotionRecorderConf(use_sensors=True, use_interpolation=True, samples_per_second=60)
-pepper = Pepper(robot_ip, motion_record_conf = conf)
+#conf = NaoqiMotionRecorderConf(use_sensors=True, use_interpolation=True, samples_per_second=60)
+#pepper = Pepper(robot_ip, motion_record_conf = conf)
 
 #------------------------------- Functions: -------------------------------#
-def execute_experiment(trials: list, participant_id: int = -1, trial_id: int = -1):
-    start_video_recording(capture_device, participant_id, trial_id)
+def test_left():
+    print('left')
+    time.sleep(1)
+def test_right():
+    print('right')
+    time.sleep(2)
+
+def execute_set_of_trials(video_recorder):
+    #start_video_recording(capture_device, participant_id, trial_id)
+    while not video_recorder.get_is_currently_recording():
+        print("WARNING: Currently not recording.")
+        time.sleep(0.1)
+    
+    trials = create_random_trials()
+    print("NOW RECORDING!")
     show_current_stage("Executing trials")
     current_trial = 0
     for trial in trials:
         print(f"Executing trial: {current_trial}")
         print("== FIRST PART ==")
         
-        talk_intro(trial["primary"])
+        #talk_intro(trial["primary"])
 
         # To determine the Ground Object (GO)
         if trial['first_item'] == 'visual':
@@ -84,29 +97,33 @@ def execute_experiment(trials: list, participant_id: int = -1, trial_id: int = -
         # but have to check if that already executes the code of talk_right() during
         # the call or if it is only executed later. Could always pass as string with a decoder.
 
-        execute_trial(first_event, second_event)
+        first_event = test_left
+        second_event = test_right
+
+        parallel(execute_single_trial, start_listening,[first_event, second_event, current_trial], [video_recorder])
         # Reset the Pepper
-        show_tablet_empty()
+        #show_tablet_empty()
         #move_peppers_static() # Confirm that this can be removed.
         current_trial += 1
         time.sleep(3) # Remove later.
+    print("Stopping video recording...")
+    video_recorder.stop_video_recording()
+    
 
-def execute_trial(first_event, second_event):
-     # Start recording the video. Save the data in the background. When started, then execute the timing and trial itself.
-     # Then, when that is finished, stop recording the video.
-
-     #parallel(record_video)
+def execute_single_trial(args):# first_event, second_event, current_trial):
+     first_event, second_event, current_trial = args
      start_time = time.time()
      parallel(first_event, second_event)
      stop_time = time.time()
-     passed_time = start_time - stop_time
-     print(f"Trial took {str(passed_time)} seconds")
+     passed_time = stop_time - start_time
+     print(f"Trial {current_trial} took {str(passed_time)} seconds")
      return passed_time
 
 #------------------------------- CODE: -------------------------------#
 # Preparations
-show_current_stage("Starting preparations")
+#show_current_stage("Starting preparations")
 
+'''
 # Prepare Tablet/Screen
 set_pepper_tablet(pepper)
 show_tablet_vu_logo()
@@ -127,9 +144,22 @@ talk_preparations()
 #move_peppers_static()
 show_tablet_vu_logo()
 show_current_stage("Finishing up")
+'''
+
+participant_id = -1
+#recorder = Recorder()
+
+if participant_id == -1:
+    print("Warning: participant ID is currently at default (-1)")
+
 
 for trial_number in range(5):
-    execute_experiment(create_random_trials())
+    video_recorder = Recorder()
+    video_recorder.set_participant_id(participant_id)
+    video_recorder.set_trial_set(trial_number)
+    parallel(video_recorder.start_video_recording, execute_set_of_trials, None, video_recorder)
+    video_recorder.stop_video_recording()
+
     ready_for_next = ''
     while not (ready_for_next != 'Y' or ready_for_next == 'y'):
         ready_for_next = input("Pause")
@@ -139,6 +169,7 @@ print("fin")
 ############################### TO DO: ##########################
 # = Make the second item and the timer work at the same time. 
 #   - Initial test made with #threader (https://github.com/FredAlfabetAdmin/Gaze-Following/blob/dd2a264518d9b516316af6c65dc34b7d9d2f1b0c/experiment/threader.py)
+#   - Synchronize the input timer count-start with the start-time of the measurement (consider having one that starts before the code is executed and one that starts the exact moment that the 'left' word is spoken - systematic shift/bias?)
 
 # = Clean the actuators from the output.
 

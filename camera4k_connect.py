@@ -10,7 +10,7 @@ faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
 # video_capture1 = cv2.VideoCapture(0)
 print("here")
-video_capture2 = cv2.VideoCapture(1) # 0 for logitech, 1 for built in
+video_capture2 = cv2.VideoCapture(0) # 0 for logitech, 1 for built in
 print(type(video_capture2))
 print("hi")
 video_capture2.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
@@ -40,7 +40,8 @@ print("hiiiii")
 a=[]
 
 i=0
-while True:
+#while True:
+for i in range(100):
     #connect.adjust_head(-0.2, 0.0)
     # i=i+1
     # s=time.time() 

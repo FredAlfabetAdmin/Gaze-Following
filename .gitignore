@@ -25,3 +25,5 @@ sic_framework/services/face_recognition_dnn/resnet50_ft_weight_old.pt
 build
 
 test.py
+
+experiment/video_output/*

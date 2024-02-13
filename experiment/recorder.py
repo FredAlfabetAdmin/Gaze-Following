@@ -5,23 +5,16 @@ import os
 import cv2 as cv
 import datetime
 import time
-
-
-
-# GLOBALS
 fps = 30
-#cap = cv.VideoCapture(0)
-#out = cv.VideoWriter(get_video_name(), cv.VideoWriter_fourcc(*'XVID'), fps, (640, 480))
-#currently_recording = False
-#finished_up_recording = False
 class Recorder():
     currently_recording = False
     participant_id = -1
     trial_set = -1
+    capture_device = -1
     finished_up_recording = True
     cap: cv.VideoCapture = None
     out: cv.VideoWriter = None
-
+    
     def get_is_currently_recording(self):
         #print(self.currently_recording)
         return self.currently_recording
@@ -31,38 +24,40 @@ class Recorder():
 
     def set_trial_set(self,_trial_set):
         self.trial_set = _trial_set
+    
+    def set_capture_device(self, capture_device):
+        self.capture_device = capture_device
    
     # This function records a video based on the device used (local webcam = 0; logitech/webcam = 1)
-    def start_video_recording(self, capture_device: int = 0):
+    def start_video_recording(self):
         # Some setup
-        #global cap, currently_recording, finished_up_recording
-        cap = cv.VideoCapture(capture_device)
-        out = cv.VideoWriter(self.get_video_name(), cv.VideoWriter_fourcc(*'XVID'), fps, (640, 480))
+        self.cap = cv.VideoCapture(self.capture_device)
+        self.out = cv.VideoWriter(self.get_video_name(), cv.VideoWriter_fourcc(*'XVID'), fps, (640, 480))
 
         # This records the video
         self.currently_recording = True
         self.finished_up_recording = False
-        print("here")
-        while cap.isOpened() and self.currently_recording:
-            ret, frame = cap.read()
+        while self.cap.isOpened() and self.currently_recording:
+            ret, frame = self.cap.read()
             if not ret:
-                print("Can't receive frame (stream end?). Exiting ...")
+                print("[VIDEO] Can't receive frame (stream end?). Exiting ...") # From the OpenCV tutorial
                 break
 
             #frame = cv.flip(frame, 0) # Flips the video output upside down
             
             # Write the video frames to the VideoCapture
-            out.write(frame)
+            self.out.write(frame)
             #cv.imshow('frame', frame) # Consider checking if this can be removed to reduce memory/CPU-usage
             if cv.waitKey(1) == ord('q'): # Press 'q' on the Python Window to stop the script
                 break
         self.finished_up_recording = True
-        
+
     def stop_video_recording(self):
         #global cap, out, currently_recording, finished_up_recording
         self.currently_recording = False
+        print("[VIDEO] Stopping Recording")
         while not self.finished_up_recording:
-            print("not done yet")
+            print("[VIDEO] Still stopping")
             time.sleep(0.1)
         # Release everything if job is finished
         self.cap.release()

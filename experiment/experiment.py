@@ -25,25 +25,27 @@ from sic_framework.devices.common_naoqi.naoqi_motion_recorder import NaoqiMotion
 
 from motions import move_peppers_left, move_peppers_right, set_pepper_motion, move_peppers_static
 from tablet import show_tablet_empty, show_tablet_right, show_tablet_vu_logo, show_tablet_left, set_pepper_tablet
-from speech import talk_left, talk_right, set_pepper_speech, talk_intro, talk_preparations
-from auxillary import show_current_stage, left_or_right
+from speech import talk_left, talk_right, set_pepper_speech, talk_intro, talk_preparations, talk_ready
+from auxillary import show_current_stage, left_or_right, confirm_ready, append_to_file
 from randomizer import create_random_trials
 from recorder import Recorder#, start_video_recording, stop_video_recording, set_participant_id, set_trial_set, get_is_currently_recording
-from threader import parallel, start_listening
+from threader import Threader #,start_listening, parallel
 
 # Variables
 port = 8080
 #machine_ip = '10.0.0.240'
-robot_ip = '10.0.0.164' # Marvin # Has SSL error.
-#robot_ip = '10.0.0.180' # Ada
+#robot_ip = '10.0.0.164' # Marvin # Has SSL error.
+robot_ip = '10.0.0.180' # Ada
 #robot_ip='10.15.3.226'
-capture_device = 0
+capture_device = 1
+participant_id = -1
 
 # Pepper device setup
-#conf = NaoqiMotionRecorderConf(use_sensors=True, use_interpolation=True, samples_per_second=60)
-#pepper = Pepper(robot_ip, motion_record_conf = conf)
+conf = NaoqiMotionRecorderConf(use_sensors=True, use_interpolation=True, samples_per_second=60)
+pepper = Pepper(robot_ip, motion_record_conf = conf)
 
 #------------------------------- Functions: -------------------------------#
+# test_left and test_right are there for when the robot is not there but you still want to test some of the code.
 def test_left():
     print('left')
     time.sleep(1)
@@ -51,21 +53,30 @@ def test_right():
     print('right')
     time.sleep(2)
 
+# This function executes the set of trials
 def execute_set_of_trials(video_recorder):
-    #start_video_recording(capture_device, participant_id, trial_id)
+    # Start recording the video
     while not video_recorder.get_is_currently_recording():
-        print("WARNING: Currently not recording.")
-        time.sleep(0.1)
+        print("[EXPERIMENT-RECORDER] WARNING: Currently not recording.")
+        time.sleep(1)
     
-    trials = create_random_trials()
-    print("NOW RECORDING!")
-    show_current_stage("Executing trials")
+    # Confirm if the participant is ready to start a new trial
+    Threader().parallel(confirm_ready, talk_ready)
+
+    time.sleep(3)
+    
+    # If needed, grab a subset of the trials
+    trials = create_random_trials()[0:3] # Remove this later to use all trials and not just a singular one.
     current_trial = 0
+
+    # Execute all the trials in the trials set
+    show_current_stage("Executing trials")
+    print("[EXPERIMENT] NOW RECORDING!")
     for trial in trials:
         print(f"Executing trial: {current_trial}")
         print("== FIRST PART ==")
         
-        #talk_intro(trial["primary"])
+        talk_intro(trial["primary"])
 
         # To determine the Ground Object (GO)
         if trial['first_item'] == 'visual':
@@ -89,51 +100,47 @@ def execute_set_of_trials(video_recorder):
         else:
             second_event = talk_left if trial['direction'] == 'right' else talk_right
 
-        # Complete the response time tracking
-        #start_listening()
-        #intermediate_time = datetime.datetime.now() - start_time
+        # if you want to just test the rest of the code without a robot.
+        #first_event = test_left
+        #second_event = test_right
 
-        # Might also make an implementation similar to start_listening(talk_right()), 
-        # but have to check if that already executes the code of talk_right() during
-        # the call or if it is only executed later. Could always pass as string with a decoder.
+        # Execute the actual code.
+        threader = Threader() # Possibly an entry into catching the return value of start_listening
+        threader.parallel(execute_single_trial, threader.start_listening, [first_event, second_event, threader], [video_recorder])
 
-        first_event = test_left
-        second_event = test_right
+        # Do something with the resulting trial
+        trial_keystroke = threader.get_resulting_output()
+        trial['keystroke'] = trial_keystroke
+        append_to_file(f'trial_output_{participant_id}', 'trial.txt',trial)
+    
+        # Confirmation or denial of correct input/output
 
-        parallel(execute_single_trial, start_listening,[first_event, second_event, current_trial], [video_recorder])
         # Reset the Pepper
-        #show_tablet_empty()
-        #move_peppers_static() # Confirm that this can be removed.
+        show_tablet_empty()
         current_trial += 1
         time.sleep(3) # Remove later.
-    print("Stopping video recording...")
+    print(trials)
     video_recorder.stop_video_recording()
-    
 
 def execute_single_trial(args):# first_event, second_event, current_trial):
-     first_event, second_event, current_trial = args
-     start_time = time.time()
-     parallel(first_event, second_event)
-     stop_time = time.time()
-     passed_time = stop_time - start_time
-     print(f"Trial {current_trial} took {str(passed_time)} seconds")
-     return passed_time
+     first_event, second_event, threader = args
+     #start_time = time.time()
+     threader.parallel(first_event, second_event)
+     #stop_time = time.time()
+     #passed_time = stop_time - start_time
+     #print(f"Trial {current_trial} took {str(passed_time)} seconds")
 
 #------------------------------- CODE: -------------------------------#
 # Preparations
-#show_current_stage("Starting preparations")
+show_current_stage("Starting preparations")
 
-'''
 # Prepare Tablet/Screen
 set_pepper_tablet(pepper)
-show_tablet_vu_logo()
+#show_tablet_vu_logo()
 show_tablet_empty()
 
 # Prepare Motion/Gestures
 set_pepper_motion(pepper)
-parallel(move_peppers_left, move_peppers_right)
-#move_peppers_left() # Confirm that this can be removed.
-#move_peppers_right() # Idem
 move_peppers_static()
 
 # Prepare Talk/Speech
@@ -141,29 +148,24 @@ set_pepper_speech(pepper)
 talk_preparations()
 
 # Finalizing
-#move_peppers_static()
 show_tablet_vu_logo()
 show_current_stage("Finishing up")
-'''
-
-participant_id = -1
-#recorder = Recorder()
 
 if participant_id == -1:
     print("Warning: participant ID is currently at default (-1)")
 
-
-for trial_number in range(5):
+experiment_length = 2
+for trial_number in range(experiment_length):
     video_recorder = Recorder()
+    video_recorder.set_capture_device(capture_device)
     video_recorder.set_participant_id(participant_id)
     video_recorder.set_trial_set(trial_number)
-    parallel(video_recorder.start_video_recording, execute_set_of_trials, None, video_recorder)
+    threader = Threader()
+
+    threader.parallel(video_recorder.start_video_recording, execute_set_of_trials, None, video_recorder)
     video_recorder.stop_video_recording()
 
-    ready_for_next = ''
-    while not (ready_for_next != 'Y' or ready_for_next == 'y'):
-        ready_for_next = input("Pause")
-
+show_current_stage("[EXPERIMENT] END OF EXPERIMENT!")
 print("fin")
 
 ############################### TO DO: ##########################
@@ -172,10 +174,12 @@ print("fin")
 #   - Synchronize the input timer count-start with the start-time of the measurement (consider having one that starts before the code is executed and one that starts the exact moment that the 'left' word is spoken - systematic shift/bias?)
 
 # = Clean the actuators from the output.
+#   - The current implementation loads the actuators during the 'preparation' and should not be displayed after that.
 
 # = Append the LShoulderPitch and RShoulderPitch to the actuators BEFORE the experiment starts (perhaps this causes the robot to move both arms at the same time?)
 #   - Remove the initial forward motion of both arms
 #   - Add the sidewards motion of both arms to confirm the arms moving around
+#   - Current implementation only makes use of the stiffness. This might be good enough for our experiment. Requires further inspection if current implementation is insufficient.
 
 # = Measure the duration that it takes for the speech, tablet and gesture to be started and executed.
 #   - Possibly not required anymore
@@ -196,6 +200,7 @@ print("fin")
 #   - Research the possiblity in terms of data-writing, etc. Per trial might clog up the system, but allows for earlier catch of errors.
 #   - Check if using the webcam/4K causes the input to be lit up with the white circle.
 #   - Confirm that the speed between trails is OK and do not require a full shot-down and start-up to record. (might lead to errors and non-recordings otherwise?)
+#   - Current setup is aimed at recording a video every trial set.
 
 # = Generate some practice-trials
 #   - Can probably use a subset of the code written in 'randomizer.create_random_trials()'
@@ -206,4 +211,8 @@ print("fin")
 
 # = Determine what to do when a user clicks on a button that is not the LEFT or RIGHT arrow key.
 
-# = BUG: Why does test.py generate two videos?
+# = Determine what to do when a trial is done
+#   - Save or append it to a file?
+#   - Confirmation or denial of correct input/output
+
+# = Rename 'visual' as it might confuse the participant for the gesture?

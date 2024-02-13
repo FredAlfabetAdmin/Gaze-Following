@@ -1,61 +1,83 @@
-import threading
 import time
 import msvcrt
+import datetime
+import threading
+from recorder import Recorder#, get_is_currently_recording, stop_video_recording
 
-output = ()
+class Threader():
+    resulting_output = {}
+    def set_resulting_output(self, value):
+        self.resulting_output = value
+    def get_resulting_output(self):
+        return self.resulting_output
+    
+    def start_listening(self, args):
+        video_recorder = args[0]
+        # Create a shared flag between the threads
+        thread_stop = threading.Event()
 
-def await_keypress(thread_stop):
-    global output
-    start_time = time.time()
-    print("starting to listen")
-    # Perhaps run the experimental conditioned code here?
-    while not thread_stop.is_set():
-        if msvcrt.kbhit():
-            #key = msvcrt.getch().decode('utf-8')   
-            key = msvcrt.getch()
-            arrow_key = msvcrt.getch().decode('utf-8')
-            thread_stop.set()
+        while not video_recorder.get_is_currently_recording():
+            print("[THREADING] Awaiting Start of Recording")
+            time.sleep(1)
+        
+        # Create threads for script logic and timer, passing the shared flag
+        script_thread = threading.Thread(target=self.await_keypress, args=(thread_stop,))
+        timer_thread = threading.Thread(target=self.timer, args=(thread_stop,))
 
-            if arrow_key == 'M': output = (True,'right')
-            elif arrow_key == 'K': output = (True, 'left')
-            else: output = (False, '')
-            break
+        script_thread.start()
+        timer_thread.start()
+        script_thread.join()
+        timer_thread.join()
+        
+        #return output
+    
+    def parallel(self, first_event, second_event, first_args = None, second_args = None):
+        # Create threads for script logic and timer, passing the shared flag
+        if first_args == None:
+            script_thread = threading.Thread(target=first_event)
+        else:
+            script_thread = threading.Thread(target=first_event, args=(first_args,))
+        if second_args == None:
+            timer_thread = threading.Thread(target=second_event)
+        else:
+            timer_thread = threading.Thread(target=second_event, args=(second_args,))
 
-        # Check if the time limit is reached
-        elapsed_time = time.time() - start_time
-        if elapsed_time >= 3:
-            print("Time limit exceeded. Stopping script logic.")
-            thread_stop.set()
-            break
+        script_thread.start()
+        timer_thread.start()
+        script_thread.join()
+        timer_thread.join()
+    
+    def await_keypress(self, thread_stop):
+        start_time = time.time()
+        output = {'valid':False, 'reason': 'initialization', 'duration':-1}
+        print("[THREADER] Watching Keystrokes")
+        # Perhaps run the experimental conditioned code here?
+        while not thread_stop.is_set():
+            if msvcrt.kbhit():
+                key = msvcrt.getch() # Required to be called, but does not actually do anything?
+                arrow_key = msvcrt.getch().decode('utf-8')
+                thread_stop.set()
 
-def timer(thread_stop, delay_time):
-    i = 0
-    while not thread_stop.is_set() or i < 5:
-        i += 1
-        print("i")
-        time.sleep(0.1)
+                # Consider if the arrow keys here have to be used or not.
+                if arrow_key == 'M': output = {'valid': True, 'reason': 'right', 'duration': time.time() - start_time}
+                elif arrow_key == 'K': output = {'valid': True, 'reason': 'left', 'duration': time.time() - start_time}
+                else: output = {'valid': False, 'reason': 'wrongkey', 'duration': time.time() - start_time}
+                break
 
-def start_listening():
-    # Create a shared flag between the threads
-    thread_stop = threading.Event()
+            # Check if the time limit is reached
+            elapsed_time = time.time() - start_time
+            if elapsed_time >= 3:
+                print("[THREADING] Time limit exceeded. Stopping script logic.")
+                output = {'valid':False, 'reason': 'overtime', 'duration':time.time() - start_time}
+                thread_stop.set()
+                break
+        #print(output)
+        self.set_resulting_output(output)
 
-    # Create threads for script logic and timer, passing the shared flag
-    script_thread = threading.Thread(target=await_keypress, args=(thread_stop,))
-    timer_thread = threading.Thread(target=timer, args=(thread_stop,))
-
-    script_thread.start()
-    timer_thread.start()
-    script_thread.join()
-    timer_thread.join()
-
-    return output
-
-def parallel(first_event, second_event):
-    # Create threads for script logic and timer, passing the shared flag
-    script_thread = threading.Thread(target=first_event)
-    timer_thread = threading.Thread(target=second_event)
-
-    script_thread.start()
-    timer_thread.start()
-    script_thread.join()
-    timer_thread.join()
+    def timer(self, thread_stop):
+        i = 0
+        while not thread_stop.is_set():
+            #print(f"I: {i}")
+            time.sleep(0.1)
+            i+=1
+        print(f"[THREADING] I's: {i}")

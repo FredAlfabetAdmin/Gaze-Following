@@ -17,19 +17,19 @@ def set_pepper_tablet(_pepper):
     pepper = _pepper
 
 def show_tablet_left():
-    print("Showing left")
+    print(f"[TABLET] Showing Left")
     time.sleep(0.5)
     pepper.tablet_display_url.send_message(UrlMessage(arrow_left))
     
 def show_tablet_right():
-    print("Showing right")
+    print(f"[TABLET] Showing Right")
     time.sleep(0.5)
     pepper.tablet_display_url.send_message(UrlMessage(arrow_right))
     
 def show_tablet_empty():
-    print("showing none")
+    print(f"[TABLET] Showing none")
     pepper.tablet_display_url.send_message(UrlMessage(flag_empty))
 
 def show_tablet_vu_logo():
-    print("showing VU logo")
+    print(f"[TABLET] Showing VU")
     pepper.tablet_display_url.send_message(UrlMessage(vu_logo))

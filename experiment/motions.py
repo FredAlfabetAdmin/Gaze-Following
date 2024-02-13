@@ -22,17 +22,21 @@ def move_shoulder_pitch():
     pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0.5, 1, 1.6], recorded_joints=["LShoulderPitch"], recorded_times=[[2, 4, 6]])))
 
 def move_peppers_left(angle = 1):
-    print("moving peppers left arm")
+    print("[MOVING] Left arm")
     move_joints(angle, chain[0]) # always positive
 
 def move_peppers_right(angle = -1):
-    print("moving peppers right arm")
+    print("[MOVING] Right arm")
     move_joints(angle, chain[1]) # always negative
 
 def move_peppers_static():
-    print("resetting both arms")
-    move_peppers_left(angle = 0)
-    move_peppers_right(angle = 0)
+    print("[MOVING] Resetting both arms")
+    move_peppers_left(angle = 1)
+    move_peppers_right(angle = -1)
+
+def move_peppers_head():
+    print("[MOVING] Calibrating Head")
+    move_joints(.25, 'HeadPitch')
 
 def set_pepper_motion(_pepper):
     global pepper
@@ -42,6 +46,7 @@ def set_pepper_motion(_pepper):
     pepper.motion.request(NaoqiIdlePostureRequest("Body", False))
     pepper.stiffness.request(Stiffness(0.7, chain))
     pepper.stiffness.request(Stiffness(0.7, ["RShoulderPitch","LShoulderPitch"]))
-    move_peppers_left()
-    move_peppers_right()
+    move_peppers_head()
+    #move_peppers_left()
+    #move_peppers_right()
     #move_shoulder_pitch()

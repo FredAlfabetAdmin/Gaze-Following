@@ -13,18 +13,24 @@ def set_pepper_speech(_pepper):
     pepper = _pepper
 
 def talk_left():
-    print("Talking left")
-    talk("Please tap the "+"left" + "arrow")
+    print("[SPEECH] Talking Left")
+    talk("Please tap the " + "left" + "arrow")
 
 def talk_right():
-    print("Talking right")
-    talk("Please tap the "+"right" + "arrow")
+    print("[SPEECH] Talking Right")
+    talk("Please tap the " + "right" + "arrow")
+
+def talk_ready():
+    print("[SPEECH] Request Ready")
+    talk("When ready, please click Y")
 
 def talk(value):
     pepper.tts.request(NaoqiTextToSpeechRequest(value))
 
 def talk_intro(value):
+    print(f"[SPEECH] Focus {value}")
     talk(f"Let's focus on {value}")
 
 def talk_preparations():
-    talk("I am warming up my joints, vocal cords and charging my display.")
+    print(f"[SPEECH] Confirmation Module")
+    talk("Confirmation of speech module.")

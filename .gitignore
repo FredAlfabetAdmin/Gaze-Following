@@ -13,7 +13,7 @@
 .settings
 .idea
 
-
+.history/*
 
 # Ignore egg files
 sic_framework.egg-info/

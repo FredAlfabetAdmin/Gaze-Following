@@ -21,8 +21,8 @@ def talk_right():
     talk("Please tap the " + "right" + "arrow")
 
 def talk_ready():
-    print("[SPEECH] Request Ready")
     talk("When ready, please click Y")
+    print("[SPEECH] Request Ready")
 
 def talk(value):
     pepper.tts.request(NaoqiTextToSpeechRequest(value))

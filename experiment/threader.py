@@ -49,9 +49,9 @@ class Threader():
     
     def await_keypress(self, thread_stop):
         start_time = time.time()
+        print('Start time: {start_time}')
         output = {'valid':False, 'reason': 'initialization', 'duration':-1}
-        print("[THREADER] Watching Keystrokes")
-        # Perhaps run the experimental conditioned code here?
+        #print("[THREADING] Watching Keystrokes")
         while not thread_stop.is_set():
             if msvcrt.kbhit():
                 key = msvcrt.getch() # Required to be called, but does not actually do anything?
@@ -59,25 +59,30 @@ class Threader():
                 thread_stop.set()
 
                 # Consider if the arrow keys here have to be used or not.
-                if arrow_key == 'M': output = {'valid': True, 'reason': 'right', 'duration': time.time() - start_time}
-                elif arrow_key == 'K': output = {'valid': True, 'reason': 'left', 'duration': time.time() - start_time}
-                else: output = {'valid': False, 'reason': 'wrongkey', 'duration': time.time() - start_time}
+                if arrow_key == 'M':
+                    output = {'valid': True, 'reason': 'right', 'duration': time.time() - start_time}
+                elif arrow_key == 'K':
+                    output = {'valid': True, 'reason': 'left', 'duration': time.time() - start_time}
+                else:
+                    output = {'valid': False, 'reason': 'wrongkey', 'duration': time.time() - start_time}
                 break
 
             # Check if the time limit is reached
             elapsed_time = time.time() - start_time
-            if elapsed_time >= 3:
-                print("[THREADING] Time limit exceeded. Stopping script logic.")
+            max_duration = 4
+            if elapsed_time >= max_duration:
+                print(f"[THREADING] Time limit of {max_duration} seconds exceeded")
                 output = {'valid':False, 'reason': 'overtime', 'duration':time.time() - start_time}
                 thread_stop.set()
                 break
-        #print(output)
+        print(f"[THREADING] Keystroke: {output['reason']} - Took: {output['duration']}")
         self.set_resulting_output(output)
 
     def timer(self, thread_stop):
         i = 0
+        start_time = time.time()
         while not thread_stop.is_set():
-            #print(f"I: {i}")
-            time.sleep(0.1)
+            print(f"Time passed: {str(time.time() - start_time)[:5]}")
+            time.sleep(0.05)
             i+=1
         print(f"[THREADING] I's: {i}")

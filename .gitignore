@@ -14,10 +14,11 @@
 .settings
 .idea
 
-
+.history/*
 
 # Ignore egg files
 sic_framework.egg-info/
+calibration_images_output/
 
 sic_framework/services/face_recognition_dnn/resnet50_ft_weight_old.pt
 

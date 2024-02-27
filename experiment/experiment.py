@@ -13,6 +13,8 @@ to execute:
 # confirm TP-Link Wi-Fi
 open terminal: cd sic_framework\services\dialogflow ; python dialogflow.py
 open terminal: cd sic_framework\services\webserver ; python webserver_pepper_tablet.py
+
+# confirm that the participant_id and capture_device are correct!
 open terminal: cd experiment ; python experiment.py
 """
 
@@ -26,7 +28,7 @@ from sic_framework.devices.common_naoqi.naoqi_motion_recorder import NaoqiMotion
 from motions import move_peppers_left, move_peppers_right, set_pepper_motion, move_peppers_static
 from tablet import show_tablet_empty, show_tablet_right, show_tablet_vu_logo, show_tablet_left, set_pepper_tablet
 from speech import talk_left, talk_right, set_pepper_speech, talk_intro, talk_preparations, talk_ready
-from auxillary import show_current_stage, left_or_right, confirm_ready, append_to_file
+from auxillary import show_current_stage, left_or_right, confirm_ready, dump_trialset_to_json, create_data_folders
 from randomizer import create_random_trials
 from recorder import Recorder#, start_video_recording, stop_video_recording, set_participant_id, set_trial_set, get_is_currently_recording
 from threader import Threader #,start_listening, parallel
@@ -35,10 +37,12 @@ from threader import Threader #,start_listening, parallel
 port = 8080
 #machine_ip = '10.0.0.240'
 #robot_ip = '10.0.0.164' # Marvin # Has SSL error.
-robot_ip = '10.0.0.180' # Ada
+#robot_ip = '10.0.0.165' # Marvin # Has SSL error.
+robot_ip = '10.15.3.144' # Marvin # Has SSL error.
+#robot_ip = '10.0.0.180' # Ada
 #robot_ip='10.15.3.226'
-capture_device = 1
-participant_id = -1
+capture_device = 0
+participant_id = 2
 
 # Pepper device setup
 conf = NaoqiMotionRecorderConf(use_sensors=True, use_interpolation=True, samples_per_second=60)
@@ -54,7 +58,9 @@ def test_right():
     time.sleep(2)
 
 # This function executes the set of trials
-def execute_set_of_trials(video_recorder):
+def execute_set_of_trials(args):
+    video_recorder, trial_set = args
+
     # Start recording the video
     while not video_recorder.get_is_currently_recording():
         print("[EXPERIMENT-RECORDER] WARNING: Currently not recording.")
@@ -66,31 +72,32 @@ def execute_set_of_trials(video_recorder):
     time.sleep(3)
     
     # If needed, grab a subset of the trials
-    trials = create_random_trials()[0:3] # Remove this later to use all trials and not just a singular one.
+    trials = create_random_trials()[0:5] # Remove this later to use all trials and not just a singular one.
     current_trial = 0
 
     # Execute all the trials in the trials set
     show_current_stage("Executing trials")
     print("[EXPERIMENT] NOW RECORDING!")
+    trial_data = {}
     for trial in trials:
-        print(f"Executing trial: {current_trial}")
-        print("== FIRST PART ==")
+        print(f"** Executing trial: {current_trial} **")
+        #print("== FIRST PART ==")
         
         talk_intro(trial["primary"])
 
         # To determine the Ground Object (GO)
         if trial['first_item'] == 'visual':
-            print("Showing tablet")
+            #print("Showing tablet")
             first_event = show_tablet_left if left_or_right(trial['congruent'], trial['direction']) else show_tablet_right
         elif trial['first_item'] == 'gesture':
-            print("Moving gesture")
+            #print("Moving gesture")
             first_event = move_peppers_left if left_or_right(trial['congruent'], trial['direction']) else move_peppers_right
         else:
-            print("Talking")
+            #print("Talking")
             first_event = talk_left if left_or_right(trial['congruent'], trial['direction']) else talk_right
 
         # Track the response time.
-        print("== SECOND PART ==")
+        #print("== SECOND PART ==")
         # And the Figure Object (FO)
         if trial['second_item'] == 'visual':
             print()
@@ -110,16 +117,17 @@ def execute_set_of_trials(video_recorder):
 
         # Do something with the resulting trial
         trial_keystroke = threader.get_resulting_output()
+        trial['trial_id'] = current_trial
+        trial['result'] = trial['direction'] == trial_keystroke['reason']
         trial['keystroke'] = trial_keystroke
-        append_to_file(f'trial_output_{participant_id}', 'trial.txt',trial)
-    
-        # Confirmation or denial of correct input/output
+        trial_data[current_trial] = trial
+        # Consider writing the 'trial' to a specific file instead of one big dictionary (leaky)
 
         # Reset the Pepper
         show_tablet_empty()
         current_trial += 1
         time.sleep(3) # Remove later.
-    print(trials)
+    dump_trialset_to_json(trial_data, trial_set, participant_id)
     video_recorder.stop_video_recording()
 
 def execute_single_trial(args):# first_event, second_event, current_trial):
@@ -151,8 +159,10 @@ talk_preparations()
 show_tablet_vu_logo()
 show_current_stage("Finishing up")
 
-if participant_id == -1:
+if participant_id == 1:
     print("Warning: participant ID is currently at default (-1)")
+
+create_data_folders(participant_id)
 
 experiment_length = 2
 for trial_number in range(experiment_length):
@@ -162,8 +172,11 @@ for trial_number in range(experiment_length):
     video_recorder.set_trial_set(trial_number)
     threader = Threader()
 
-    threader.parallel(video_recorder.start_video_recording, execute_set_of_trials, None, video_recorder)
+    threader.parallel(video_recorder.start_video_recording, execute_set_of_trials, None, [video_recorder,trial_number])
     video_recorder.stop_video_recording()
+    print(f"TRIAL SET {trial_number} was completed!")
+    if trial_number < experiment_length - 1:
+        confirm_ready()
 
 show_current_stage("[EXPERIMENT] END OF EXPERIMENT!")
 print("fin")
@@ -190,11 +203,10 @@ print("fin")
 # = Decide on post-trial resetting of tablet and motion.
 #   - Perhaps the tablet and the motions are already turning off?
 
-# = Confirm if Threading stoppes after every trial.
-
 # = Create a storage of the duration of each trial:
 #   - Setup
 #   - Response duration
+#   - Improve the dictionary creation and writing. (consider 'json' module)
 
 # = Save a video or photo from every trial, per trial set or for the whole experiment?
 #   - Research the possiblity in terms of data-writing, etc. Per trial might clog up the system, but allows for earlier catch of errors.
@@ -216,3 +228,8 @@ print("fin")
 #   - Confirmation or denial of correct input/output
 
 # = Rename 'visual' as it might confuse the participant for the gesture?
+
+# =  Convert the data output from two individual folders to one 'participant' folder.
+#   - Can also implement a check to see if that participant already has an ID. Without it might lead to overwriting data.
+
+# = Remove the 'motions' folder

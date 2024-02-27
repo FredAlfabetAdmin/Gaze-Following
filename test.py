@@ -1,152 +1,86 @@
+import queue
 import cv2
-import numpy as np
-import socket
+from sic_framework.core.message_python2 import CompressedImageMessage
+from sic_framework.devices import Nao
+from sic_framework.devices.common_naoqi.naoqi_camera import NaoqiCameraConf
+from sic_framework.devices.common_naoqi.naoqi_motion import NaoqiIdlePostureRequest
+from sic_framework.devices.common_naoqi.naoqi_motion_recorder import PlayRecording, NaoqiMotionRecording
+from sic_framework.devices.common_naoqi.naoqi_stiffness import Stiffness
+from sic_framework.devices.pepper import Pepper
+from sic_framework.devices.common_naoqi.naoqi_text_to_speech import NaoqiTextToSpeechRequest
+import time
+import pandas as pd
 
-class PepperCamera:
-    def __init__(self, ip='10.0.0.180', port=12345, camera=4):
-        self.ip = ip
-        self.port = port
-        self.camera = camera
-        self.socket = socket.socket()
-        try:
-            self.socket.connect((self.ip, self.port))
-            print("Successfully connected with {}:{}".format(self.ip, self.port))
-        except Exception as e:
-            print("Failed to connect with {}:{}. Error: {}".format(self.ip, self.port, str(e)))
-            exit(1)
+focus_point = [
+    ' ',
+    'please look at my head camera',
+    'please look at my face',
+    'please look at my tablet',
+    'please look at my left elbow',
+    'please look at my right elbow',
+    'the part ended, please take off your glasses',
+    ' ',
+    'please look at my head camera',
+    'please look at my face ',
+    'please look at my tablet',
+    'please look at my left arm',
+    'please look at my right arm',
+    'calibration finished! thanks very much!']
+
+focus_point = [
+    ' ',
+    'please look at my head camera',
+    'please look at my face']
+current_focus_point = 0
+time_inbetween = 4
+
+nao = Nao(ip="10.0.0.237")
+def calibrate():
+    df = pd.DataFrame(columns=['time', 'frame_id'])
+    dictionary_list = []
+    next_item_times = []
+    i=0
+
+    start_time = time.time()
+    current_time = time.time()
+    print(f'Start time: {start_time}')
+    while time.time() < start_time + (len(focus_point) * time_inbetween):
+        # For every 3 seconds, go to the next output.
+        #print(focus_point[current_focus_point])
+        to_check = ((current_focus_point * time_inbetween) + start_time)
         
-        # Set camera resolution based on the selected camera
-        self.width, self.height = self.get_resolution(camera)
-        self.size = self.width * self.height * 3  # Assuming RGB format
+        print(f'Seconds remaining until next bodypart: {(to_check - current_time):.4f}')
 
-    def get_resolution(self, camera):
-        resolutions = {
-            1: (1280, 360),
-            2: (2560, 720),
-            3: (320, 240),
-            4: (640, 480)
+        frame_id = f'{i:010}'
+        dictionary_data = {
+            'current_focus_point': current_focus_point,
+            'frame_id': frame_id,
+            'time': current_time
         }
-        return resolutions.get(camera, (640, 480))  # Default to (640, 480)
+        dictionary_list.append(dictionary_data)
 
-    def get_image(self):
-        try:
-            self.socket.send(b'getImg')
-            pepper_img = b""
-            while len(pepper_img) < self.size:
-                pepper_img += self.socket.recv(self.size - len(pepper_img))
-        except Exception as e:
-            print("Error receiving image:", str(e))
-            return None
-        
-        return pepper_img
-
-    def close(self):
-        self.socket.close()
-
-if __name__ == '__main__':
-    pepper_camera = PepperCamera()
-
-    while True:
-        try:
-            img_data = pepper_camera.get_image()
-            if img_data is not None:
-                # Convert the received bytes to a numpy array
-                img_array = np.frombuffer(img_data, dtype=np.uint8)
-                # Check the dimensions of the received image data
-                if len(img_array) != pepper_camera.size:
-                    print("Received image data size does not match expected size")
-                    continue
-                # Reshape the array to the correct resolution
-                img_rgb = img_array.reshape((pepper_camera.height, pepper_camera.width, 3))
-                # Display the image
-                cv2.imshow('Pepper Camera', img_rgb)
-            else:
-                print("Failed to receive image.")
-                break
+        if current_time > to_check:
+            print(f'Time to execute the next calibration part at {time.time()} - passed: {time.time() - start_time}')
+            print(f'{focus_point[current_focus_point]}')
+            next_item_times.append({
+                'current_focus_point':current_focus_point,
+                'frame_id': frame_id,
+                'time':current_time,
+                'speech':focus_point[current_focus_point]})
+            nao.tts.request(NaoqiTextToSpeechRequest(focus_point[current_focus_point]))
+            current_focus_point += 1
             
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord('q'):
-                break
-        except Exception as e:
-            print("An error occurred:", str(e))
+            print('done')
+        if current_focus_point == len(focus_point):
+            print('finished. Breaking')
             break
+        current_time = time.time()
+        i+=1
 
-    pepper_camera.close()
-    cv2.destroyAllWindows()
-
-
-#########################
-''' #Three times next to each other in grayscale
-
-import cv2
-import numpy as np
-import socket
-
-class PepperCamera:
-    def __init__(self, ip='10.0.0.180', port=12345, camera=4):
-        self.ip = ip
-        self.port = port
-        self.camera = camera
-        self.socket = socket.socket()
-        try:
-            self.socket.connect((self.ip, self.port))
-            print("Successfully connected with {}:{}".format(self.ip, self.port))
-        except Exception as e:
-            print("Failed to connect with {}:{}. Error: {}".format(self.ip, self.port, str(e)))
-            exit(1)
-        
-        # Set camera resolution based on the selected camera
-        self.width, self.height = self.get_resolution(camera)
-        self.size = self.width * self.height * 3  # Assuming RGB format
-
-    def get_resolution(self, camera):
-        resolutions = {
-            1: (1280, 360),
-            2: (2560, 720),
-            3: (320, 240),
-            4: (640, 480)
-        }
-        return resolutions.get(camera, (640, 480))  # Default to (640, 480)
-
-    def get_image(self):
-        try:
-            self.socket.send(b'getImg')
-            pepper_img = b""
-            while len(pepper_img) < self.size:
-                pepper_img += self.socket.recv(self.size - len(pepper_img))
-        except Exception as e:
-            print("Error receiving image:", str(e))
-            return None
-        
-        return pepper_img
-
-    def close(self):
-        self.socket.close()
-
-if __name__ == '__main__':
-    pepper_camera = PepperCamera()
-
-    while True:
-        img_data = pepper_camera.get_image()
-        if img_data is not None:
-            # Convert the received bytes to a numpy array
-            img_array = np.frombuffer(img_data, dtype=np.uint8)
-            # Check the dimensions of the received image data
-            if len(img_array) != pepper_camera.size:
-                print("Received image data size does not match expected size")
-                continue
-            # Reshape the array to the correct resolution
-            img = img_array.reshape((pepper_camera.height, pepper_camera.width, 3))
-            # Display the image
-            cv2.imshow('Pepper Camera', img)
-        else:
-            print("Failed to receive image.")
-            break
-        
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('q'):
-            break
-
-    pepper_camera.close()
-    cv2.destroyAllWindows()
-'''
+    # Save the datapoints to a file
+    df = pd.DataFrame(dictionary_list)
+    df.to_csv('./data_frames.csv', index=False)
+    df = pd.DataFrame(next_item_times)
+    df.to_csv('./data_focus_times.csv', index=False)
+    print("finished calibration recording")
+print('fin')

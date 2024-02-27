@@ -37,8 +37,10 @@ from threader import Threader #,start_listening, parallel
 port = 8080
 #machine_ip = '10.0.0.240'
 #robot_ip = '10.0.0.164' # Marvin # Has SSL error.
+#robot_ip = '10.0.0.165' # Marvin # Has SSL error.
+robot_ip = '10.15.3.144' # Marvin # Has SSL error.
 #robot_ip = '10.0.0.180' # Ada
-robot_ip='10.15.3.226'
+#robot_ip='10.15.3.226'
 capture_device = 0
 participant_id = 2
 

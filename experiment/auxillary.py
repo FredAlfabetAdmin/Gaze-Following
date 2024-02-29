@@ -1,5 +1,6 @@
 import os
 import json
+import pandas as pd
 
 # Pretty prints the current stage in the terminal
 def show_current_stage(value):
@@ -25,11 +26,6 @@ def confirm_ready():
 
 # This function appends data to the end of a file (useful for saving trialdata)
 folder_data = './data/'
-'''
-def append_trial_data_to_file(participant_id, data):
-    with open(folder_data + f'part_{participant_id}' + "/trial_info.txt", "a+") as file_:
-        file_.writelines(str(data) + "\r")
-'''
 def dump_trialset_to_json(data, trial_set, participant_id):
     with open(get_participant_folder(participant_id) + f'trial_info_{trial_set}.json', 'w') as f:
         json.dump(data, f)
@@ -41,3 +37,10 @@ def create_data_folders(participant_id):
 
 def get_participant_folder(participant_id):
     return folder_data + f'part_{participant_id}/'
+
+def save_dataframe_to_csv(dict, filename):
+    print(dict)
+    df = pd.DataFrame(dict)    
+    df.to_json(f'{filename}.json', index=False)
+    #df.to_csv(f'{filename}.csv', index=False)
+    print(f"[I/O] Finished writing {filename} to json")

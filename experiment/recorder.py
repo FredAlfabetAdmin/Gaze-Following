@@ -6,7 +6,7 @@ import cv2 as cv
 import datetime
 import time
 from tqdm import tqdm
-from auxillary import get_participant_folder, save_dataframe_to_csv
+from auxillary import get_participant_folder, save_dataframe_to_csv, append_info_to_list
 
 class Recorder():
     # PARAMETERS
@@ -41,19 +41,23 @@ class Recorder():
     # FUNCTIONS TO RECORD
     def start_video_recording(self):
         # Some Parameter setup
-        self.cap = cv.VideoCapture(self.capture_device, cv.CAP_DSHOW) # Capture 4K
-        self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 3840)
-        self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 2160)
-
-        self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
-        self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
-
+        self.cap = cv.VideoCapture(self.capture_device, cv.CAP_GSTREAMER) # Capture 4K
+        
+        set_width_success = self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 3840)
+        set_height_success =self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 2160)
+        print(f"Initial setting went W: {set_width_success} - {cv.CAP_PROP_FRAME_WIDTH} & H: {set_height_success} - {cv.CAP_PROP_FRAME_HEIGHT}")
+        if not set_width_success:
+            set_width_success = self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
+        if not set_height_success:
+            set_height_success = self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
+        print(f"If wrong, setting went W: {set_width_success} & H: {set_height_success}")
 
         self.currently_recording = True
         self.finished_up_recording = False
         with_frames = []
         frameless = []
         i = 0
+        print(f"Backend mode: {self.cap.getBackendName()}")
 
         # Only start when it is actually recording
         while self.cap.isOpened() and self.currently_recording:
@@ -64,31 +68,16 @@ class Recorder():
                 break
         
             # Get the current time.
-            with_frames, frameless, i = self.append_info_to_list(with_frames, frameless, i, frame)
+            with_frames, frameless, i = append_info_to_list(with_frames, frameless, i, frame)
             if cv.waitKey(1) == ord('q'): # Press 'q' on the Python Window to stop the script
                 break
         print("[VIDEO] Done with recording the 4K")
         self.finished_up_recording = True
         self.stop_video_recording()
         cv.destroyAllWindows()
-        save_dataframe_to_csv(frameless, self.get_video_name() + '_4K')
+        save_dataframe_to_csv(frameless, self.get_video_name() + '4K')
         self.save_images(with_frames, True)
-
-    def append_info_to_list(self, _dictionary_list, _frameless_list, _i, _frame):
-        
-        _dictionary_data = {
-            'ID':f'{str(_i):010}',
-            'time':time.time(),
-            'frame':_frame # Consider adding the image to the dictionary already. Check with I/O speeds.
-        }
-        _frameless_data = {
-            'ID':f'{str(_i):010}',
-            'time':time.time()
-        }
-        _dictionary_list.append(_dictionary_data)
-        _frameless_list.append(_frameless_data)
-        _i += 1
-        return _dictionary_list, _i, _frameless_list
+        print("[VIDEO] Finished saving images from 4K")
 
     # Save all images to the disk.
     def save_images(self, dictionary_list, _4K = True):
@@ -128,7 +117,7 @@ class Recorder():
         now = str(datetime.datetime.now())
         #video_plus_date = str(video_output_folder + now.replace(':', '_') + "_")
         #video_plus_date = ''
-        file_output = video_output_folder + f'{self.participant_id}_{self.trial_set}_'
+        file_output = video_output_folder + f'part_{self.participant_id}_trialset_{self.trial_set}_'
         file_output += 'calibration_' if self.get_is_calibration else 'experiment_'
         
         # Create the folders

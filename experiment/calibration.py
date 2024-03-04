@@ -17,11 +17,7 @@ import time
 import pandas as pd
 import sys
 
-from motions import move_peppers_left, move_peppers_right, set_pepper_motion, move_peppers_static
-from tablet import show_tablet_empty, show_tablet_right, show_tablet_vu_logo, show_tablet_left, set_pepper_tablet
-from speech import talk_left, talk_right, set_pepper_speech, talk_intro, talk_preparations, talk_ready
-from auxillary import show_current_stage, left_or_right, confirm_ready, dump_trialset_to_json, create_data_folders, save_dataframe_to_csv
-from randomizer import create_random_trials
+from auxillary import show_current_stage,  save_dataframe_to_csv, append_info_to_list
 from recorder import Recorder#, start_video_recording, stop_video_recording, set_participant_id, set_trial_set, get_is_currently_recording
 from threader import Threader
 
@@ -45,7 +41,6 @@ def calibrate():
 
 def run_test(video_recorder: Recorder):
     # Parameters
-    global is_recording_pepper
     #df = pd.DataFrame(columns=['time', 'frame_id'])
     dictionary_list = []
     next_item_times = []
@@ -130,7 +125,6 @@ def run_test(video_recorder: Recorder):
     nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0], recorded_joints=["LShoulderRoll"], recorded_times=[[0]])))
     nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0], recorded_joints=["RShoulderRoll"], recorded_times=[[0]])))
     video_recorder.stop_video_recording()
-    is_recording_pepper = False
     print("[CALIBRATION] Finished calibration recording")
     
 def on_image(image_message: CompressedImageMessage):
@@ -149,21 +143,19 @@ def record_pepper(video_recorder: Recorder):
         time.sleep(1)
         i_await+=1
     print("[PEPPER] Starting to calibrate video")
-    imgs = queue.Queue()
-    global is_recording_pepper
-    while is_recording_pepper:
+    #imgs = queue.Queue()
+    while video_recorder.get_currently_recording():
         img = imgs.get()
-   
         # Get the current time.
-        pepper_with_frames, pepper_frameless , i = video_recorder.append_info_to_list(pepper_with_frames, pepper_frameless, i, img[..., ::-1])
-        if (cv.waitKey(1) == ord('q')) or not video_recorder.get_currently_recording(): # Press 'q' on the Python Window to stop the script
-            print("Breaking from Pepper output")
-            break
+        pepper_with_frames, pepper_frameless , i = append_info_to_list(pepper_with_frames, pepper_frameless, i, img[..., ::-1])
+        #if (cv.waitKey(1) == ord('q')) or not video_recorder.get_currently_recording(): # Press 'q' on the Python Window to stop the script
+        #    print("Breaking from Pepper output")
+        #    break
     print("[PEPPER] Ended video recording loop Pepper")
     cv.destroyAllWindows()    
     print("[PEPPER] Starting saving images from Pepper")
     print(f'[PEPPER] Amount of frames in Pepper Dictionary: {len(pepper_frameless)}')
-    save_dataframe_to_csv(pepper_frameless, video_recorder.get_video_name() + '_pepper')
+    save_dataframe_to_csv(pepper_frameless, video_recorder.get_video_name() + 'pepper')
     video_recorder.save_images(pepper_with_frames, False)
     print("[PEPPER] Finished saving images from Pepper")
     #video_recorder.finished_up_recording = True
@@ -196,14 +188,13 @@ nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0,
 
 # Prepare the recorder
 video_recorder = Recorder()
-video_recorder.set_capture_device(1)
+video_recorder.set_capture_device(0)
 video_recorder.set_is_calibration(True)
 #video_recorder.set_currently_recording(True)
 threader = Threader()
 
 # Execute the actual calibration
 show_current_stage('STARTING CALIBRATION')
-is_recording_pepper = True
 threader.triple_parallel(video_recorder.start_video_recording, record_pepper, run_test, second_args=video_recorder, third_args=video_recorder)
 nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["LShoulderRoll"], recorded_times=[[0, 1]])))
 nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["RShoulderRoll"], recorded_times=[[0, 1]])))

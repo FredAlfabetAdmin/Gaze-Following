@@ -34,19 +34,41 @@ class Threader():
     def parallel(self, first_event, second_event, first_args = None, second_args = None):
         # Create threads for script logic and timer, passing the shared flag
         if first_args == None:
-            script_thread = threading.Thread(target=first_event)
+            first_thread = threading.Thread(target=first_event)
         else:
-            script_thread = threading.Thread(target=first_event, args=(first_args,))
+            first_thread = threading.Thread(target=first_event, args=(first_args,))
         if second_args == None:
-            timer_thread = threading.Thread(target=second_event)
+            second_thread = threading.Thread(target=second_event)
         else:
-            timer_thread = threading.Thread(target=second_event, args=(second_args,))
+            second_thread = threading.Thread(target=second_event, args=(second_args,))
 
-        script_thread.start()
-        timer_thread.start()
-        script_thread.join()
-        timer_thread.join()
+        first_thread.start()
+        second_thread.start()
+        first_thread.join()
+        second_thread.join()
     
+    def triple_parallel(self, first_event, second_event, third_event, first_args = None, second_args = None, third_args = None):
+        # Create threads for script logic and timer, passing the shared flag
+        if first_args == None:
+            first_thread = threading.Thread(target=first_event)
+        else:
+            first_thread = threading.Thread(target=first_event, args=(first_args,))
+        if second_args == None:
+            second_thread = threading.Thread(target=second_event)
+        else:
+            second_thread = threading.Thread(target=second_event, args=(second_args,))
+        if third_args == None:
+            third_event = threading.Thread(target=third_event)
+        else:
+            third_event = threading.Thread(target=third_event, args=(third_args,))
+
+        first_thread.start()
+        second_thread.start()
+        third_event.start()
+        first_thread.join()
+        second_thread.join()
+        third_event.join()
+
     def await_keypress(self, thread_stop):
         start_time = time.time()
         print('Start time: {start_time}')

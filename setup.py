@@ -1,7 +1,7 @@
 from setuptools import setup
 import six
 
-requirements = ['numpy', 'redis', 'Pillow', 'six',]
+requirements = ['numpy', 'redis', 'Pillow', 'six','tqdm',]
 
 if six.PY3:
     # cannot be installed on nao

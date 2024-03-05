@@ -40,26 +40,58 @@ class Recorder():
 
     # FUNCTIONS TO RECORD
     def start_video_recording(self):
-        # Some Parameter setup
-        self.cap = cv.VideoCapture(self.capture_device, cv.CAP_GSTREAMER) # Capture 4K
+        ### Record_in_4K        
+        capture = cv.VideoCapture(0, cv.CAP_FFMPEG)
+        capture.set(cv.CAP_PROP_FOURCC, cv.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+
+        # Check if the camera is opened correctly
+        if not capture.isOpened():
+            print("ERROR: Can't initialize camera capture")
+            exit(1)
+
+        # Set properties: frame width, frame height, and frames per second (FPS)
+        resolutions = { 0:{'w':4096, 'h': 2160, 'fps':30},
+                        1:{'w':3840, 'h': 2160, 'fps':60},
+                        2:{'w':1920, 'h': 1080, 'fps':30},
+                        3:{'w':1280, 'h': 720, 'fps':30}               
+                    }
+        resolution_choice = 0
+        capture.set(cv.CAP_PROP_FRAME_WIDTH, resolutions[resolution_choice]['w'])
+        capture.set(cv.CAP_PROP_FRAME_HEIGHT, resolutions[resolution_choice]['h'])
+        capture.set(cv.CAP_PROP_FPS, resolutions[resolution_choice]['fps'])
+
+        # Get the resolution
+        width = int(capture.get(cv.CAP_PROP_FRAME_WIDTH))
+        height = int(capture.get(cv.CAP_PROP_FRAME_HEIGHT))
+        fps = int(capture.get(cv.CAP_PROP_FPS))
+        print(f"Resolution W: {width} - H: {height} - FPS: {fps}")
+
         
-        set_width_success = self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 3840)
-        set_height_success =self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 2160)
-        print(f"Initial setting went W: {set_width_success} - {cv.CAP_PROP_FRAME_WIDTH} & H: {set_height_success} - {cv.CAP_PROP_FRAME_HEIGHT}")
-        if not set_width_success:
-            set_width_success = self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
-        if not set_height_success:
-            set_height_success = self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
-        print(f"If wrong, setting went W: {set_width_success} & H: {set_height_success}")
+        
+        ### ORIGINAL
+        # Some Parameter setup
+        #self.cap = cv.VideoCapture(self.capture_device, cv.CAP_GSTREAMER) # Capture 4K
+        
+        #set_width_success = self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 3840)
+        #set_height_success =self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 2160)
+        #print(f"Initial setting went W: {set_width_success} - {cv.CAP_PROP_FRAME_WIDTH} & H: {set_height_success} - {cv.CAP_PROP_FRAME_HEIGHT}")
+        #if not set_width_success:
+            #set_width_success = self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
+        #if not set_height_success:
+            #set_height_success = self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
+        #print(f"If wrong, setting went W: {set_width_success} & H: {set_height_success}")
 
         self.currently_recording = True
         self.finished_up_recording = False
         with_frames = []
         frameless = []
         i = 0
-        print(f"Backend mode: {self.cap.getBackendName()}")
+        #print(f"Backend mode: {self.cap.getBackendName()}")
 
         # Only start when it is actually recording
+        start_time = time.time()
+        num_frames = 0
+
         while self.cap.isOpened() and self.currently_recording:
             # Get the frame
             ret, frame = self.cap.read()
@@ -71,6 +103,18 @@ class Recorder():
             with_frames, frameless, i = append_info_to_list(with_frames, frameless, i, frame)
             if cv.waitKey(1) == ord('q'): # Press 'q' on the Python Window to stop the script
                 break
+            
+            # Calculate FPS every second
+            num_frames += 1
+            elapsed_time = time.time() - start_time
+            if elapsed_time >= 1.0:
+                fps = num_frames / elapsed_time
+                print("[4K] FPS:", fps)
+
+                # Reset variables for the next FPS calculation
+                start_time = time.time()
+                num_frames = 0
+
         print("[VIDEO] Done with recording the 4K")
         self.finished_up_recording = True
         self.stop_video_recording()

@@ -4,6 +4,7 @@ import time
 # Initialize the video capture
 #availableBackends = [cv2.videoio_registry.getBackendName(b) for b in cv2.videoio_registry.getBackends()]
 #print(availableBackends) #['FFMPEG', 'GSTREAMER', 'INTEL_MFX', 'MSMF', 'DSHOW', 'CV_IMAGES', 'CV_MJPEG', 'UEYE', 'OBSENSOR']
+
 capture = cv2.VideoCapture(0, cv2.CAP_FFMPEG)
 capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
 
@@ -13,12 +14,13 @@ if not capture.isOpened():
     exit(1)
 
 # Set properties: frame width, frame height, and frames per second (FPS)
-resolutions = { 0:{'w':4096, 'h': 2160, 'fps':30},
-                1:{'w':3840, 'h': 2160, 'fps':60},
-                2:{'w':1920, 'h': 1080, 'fps':30},
-                3:{'w':1280, 'h': 720, 'fps':30}               
+resolutions = { 0:{'w':4096, 'h': 2160, 'fps':60}, # Does not work!
+                1:{'w':4096, 'h': 2160, 'fps':30}, # Does not work!
+                2:{'w':3840, 'h': 2160, 'fps':60}, # Reaches about 24 fps
+                3:{'w':1920, 'h': 1080, 'fps':30}, 
+                4:{'w':1280, 'h': 720, 'fps':30}
                }
-resolution_choice = 0
+resolution_choice = 1
 capture.set(cv2.CAP_PROP_FRAME_WIDTH, resolutions[resolution_choice]['w'])
 capture.set(cv2.CAP_PROP_FRAME_HEIGHT, resolutions[resolution_choice]['h'])
 capture.set(cv2.CAP_PROP_FPS, resolutions[resolution_choice]['fps'])
@@ -33,6 +35,7 @@ start_time = time.time()
 num_frames = 0
 
 # Capture loop
+a = []
 while True:
     # Capture frame-by-frame
     ret, frame = capture.read()
@@ -42,7 +45,8 @@ while True:
         break
 
     # Display the captured frame
-    cv2.imshow("Frame", frame)
+    a.append(frame)
+    #cv2.imshow("Frame", frame)
 
     # Increment frame count
     num_frames += 1
@@ -60,6 +64,8 @@ while True:
     # Exit if 'q' is pressed
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+
+print(a)
 
 # Release the camera and close any open windows
 capture.release()

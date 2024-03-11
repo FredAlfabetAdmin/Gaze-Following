@@ -1,8 +1,10 @@
 import time
-import msvcrt
-import datetime
+from pynput import keyboard
 import threading
-from recorder import Recorder#, get_is_currently_recording, stop_video_recording
+from threading import Thread
+import cv2
+import queue
+import os
 
 class Threader():
     resulting_output = {}
@@ -11,9 +13,9 @@ class Threader():
     def get_resulting_output(self):
         return self.resulting_output
     
+    # This function if for listening to the keystrokes.
     def start_listening(self, args):
         video_recorder = args[0]
-        # Create a shared flag between the threads
         thread_stop = threading.Event()
 
         while not video_recorder.get_is_currently_recording():
@@ -29,10 +31,8 @@ class Threader():
         script_thread.join()
         timer_thread.join()
         
-        #return output
-    
+    # This function runs two events in parallel.
     def parallel(self, first_event, second_event, first_args = None, second_args = None):
-        # Create threads for script logic and timer, passing the shared flag
         if first_args == None:
             first_thread = threading.Thread(target=first_event)
         else:
@@ -47,8 +47,9 @@ class Threader():
         first_thread.join()
         second_thread.join()
     
+    # This function runs three threads at the same time.
+    # Consider changing this to accept lists as inputs with a loop to enable scaling.
     def triple_parallel(self, first_event, second_event, third_event, first_args = None, second_args = None, third_args = None):
-        # Create threads for script logic and timer, passing the shared flag
         if first_args == None:
             first_thread = threading.Thread(target=first_event)
         else:
@@ -69,25 +70,13 @@ class Threader():
         second_thread.join()
         third_event.join()
 
+    # This function awaits the actual key pressed
     def await_keypress(self, thread_stop):
         start_time = time.time()
         print('Start time: {start_time}')
         output = {'valid':False, 'reason': 'initialization', 'duration':-1}
-        #print("[THREADING] Watching Keystrokes")
         while not thread_stop.is_set():
-            if msvcrt.kbhit():
-                key = msvcrt.getch() # Required to be called, but does not actually do anything?
-                arrow_key = msvcrt.getch().decode('utf-8')
-                thread_stop.set()
-
-                # Consider if the arrow keys here have to be used or not.
-                if arrow_key == 'M':
-                    output = {'valid': True, 'reason': 'right', 'duration': time.time() - start_time}
-                elif arrow_key == 'K':
-                    output = {'valid': True, 'reason': 'left', 'duration': time.time() - start_time}
-                else:
-                    output = {'valid': False, 'reason': 'wrongkey', 'duration': time.time() - start_time}
-                break
+            self.listen_to_key() # I'm afraid that this will not continue with the code at the same time. Perhaps Parallel?
 
             # Check if the time limit is reached
             elapsed_time = time.time() - start_time
@@ -108,3 +97,69 @@ class Threader():
             time.sleep(0.05)
             i+=1
         print(f"[THREADING] I's: {i}")
+        
+    # This function checks which key was pressed
+    def on_press(self, _key):
+        lr = (_key == keyboard.Key.left or _key == keyboard.Key.right)
+        self.check_key_left_right(_key)
+        if lr:
+            global key
+            key = _key.name
+            self.on_release(_key)    
+        return not lr
+
+    # Required function for the keyboard Listener
+    def on_release(self, _key):
+        pass
+
+    # This function enables keypresses to be recorded.
+    def listen_to_key(self):
+        with keyboard.Listener(
+                on_press=self.on_press,
+                on_release=self.on_release,
+                suppress=True) as listener:
+            listener.join()
+
+        listener = keyboard.Listener(
+            on_press=self.on_press,
+            on_release=self.on_release)
+        listener.start()
+
+        # enums
+        #Key.left:  65361
+        #Key.right: 65363
+        return key
+
+# This function is a small passthrough wrapper for writing images 
+def wsf(arguments):
+    i, frame, video_name, _4K = arguments
+    device = '4K' if _4K else 'Pepper'
+    os.makedirs(video_name + '/' + device+ '/', exist_ok=True)
+    video_name += '/' + device + '/'
+    output_file = f'{video_name}{i}.jpg'
+    cv2.imwrite(output_file, frame) # Update this to contain the get_video_name()
+    
+# This is the main function that gets called when saving a single frame to the disk.
+# Note: beware of overloading the amount of Threads that can be started.
+def write_single_frame(i, frame, video_name,_4K = True):
+    #print(threading.active_count())
+    #q.put([i, frame, video_name, _4K])
+    Thread(target=wsf, args=((i, frame, video_name,_4K),)).start()
+
+def process():
+    global q, activearguments
+    while active or len(q) != 0:
+        if len(q) != 0:
+            wsf([q.get()])
+
+q = queue.Queue()
+active = False
+def start_processing_images():
+    global q, active
+    active = True
+    #Thread(target=process).start()
+
+def set_active(_active):
+    global active
+    if active: start_processing_images()
+    active = _active

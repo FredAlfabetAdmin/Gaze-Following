@@ -2,11 +2,7 @@
 # open terminal: cd sic_framework\tests\demo_webserver\ ; python demo_pepper_guess_number.py
 
 """
-The Dialogflow and Webserver pepper tablet should be running. You can start them with:
-[services/dialogflow] python dialogflow.py
-[services/webserver]  python webserver_pepper_tablet.py
-
-to execute:
+To execute:
 # Might be better to disable the Pepper's autonomous life before executing the code.
 
 # confirm Docker Framework is running
@@ -81,8 +77,6 @@ def execute_set_of_trials(args):
     trial_data = {}
     for trial in trials:
         print(f"** Executing trial: {current_trial} **")
-        #print("== FIRST PART ==")
-        
         talk_intro(trial["primary"])
 
         # To determine the Ground Object (GO)
@@ -96,8 +90,6 @@ def execute_set_of_trials(args):
             #print("Talking")
             first_event = talk_left if left_or_right(trial['congruent'], trial['direction']) else talk_right
 
-        # Track the response time.
-        #print("== SECOND PART ==")
         # And the Figure Object (FO)
         if trial['second_item'] == 'visual':
             print()
@@ -106,10 +98,6 @@ def execute_set_of_trials(args):
             second_event = move_peppers_left if trial['direction'] == 'right' else move_peppers_right
         else:
             second_event = talk_left if trial['direction'] == 'right' else talk_right
-
-        # if you want to just test the rest of the code without a robot.
-        #first_event = test_left
-        #second_event = test_right
 
         # Execute the actual code.
         threader = Threader() # Possibly an entry into catching the return value of start_listening
@@ -132,11 +120,7 @@ def execute_set_of_trials(args):
 
 def execute_single_trial(args):# first_event, second_event, current_trial):
      first_event, second_event, threader = args
-     #start_time = time.time()
      threader.parallel(first_event, second_event)
-     #stop_time = time.time()
-     #passed_time = stop_time - start_time
-     #print(f"Trial {current_trial} took {str(passed_time)} seconds")
 
 #------------------------------- CODE: -------------------------------#
 # Preparations

@@ -1,0 +1,5 @@
+cd Desktop/code\ testing/framework/; redis-server conf/redis/redis.conf
+
+gnome-system-monitor
+
+@id:terminal.integrated.commandsToSkipShell,terminal.integrated.sendKeybindingsToShell,terminal.integrated.allowChords

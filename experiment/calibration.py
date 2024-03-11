@@ -16,10 +16,11 @@ import cv2 as cv
 import time
 import pandas as pd
 import sys
+import threading
 
 from auxillary import show_current_stage,  save_dataframe_to_csv, append_info_to_list
-from recorder import Recorder#, start_video_recording, stop_video_recording, set_participant_id, set_trial_set, get_is_currently_recording
-from threader import Threader
+from recorder import Recorder
+from threader import Threader, write_single_frame, set_active, start_processing_images
 
 ############################################################
 def calibrate():
@@ -41,11 +42,9 @@ def calibrate():
 
 def run_test(video_recorder: Recorder):
     # Parameters
-    #df = pd.DataFrame(columns=['time', 'frame_id'])
-    dictionary_list = []
-    next_item_times = []
     current_focus_point = 0
     time_inbetween = 4
+    next_item_times = []
 
     print('In run test')
     focus_point = [
@@ -60,12 +59,12 @@ def run_test(video_recorder: Recorder):
         'please look at my head camera',
         'please look at my face ',
         'please look at my tablet',
-        'please look at my left arm',
-        'please look at my right arm',
-        'calibration finished! thanks very much!',
+        'please look at my left elbow',
+        'please look at my right elbow',
+        'calibration finished! thank you very much!',
         '']
 
-    #'''
+    '''
     focus_point = [
         ' ',
         'please look at my head camera',
@@ -74,9 +73,9 @@ def run_test(video_recorder: Recorder):
     
     # Start recording the video
     print(video_recorder.get_currently_recording())
-    while not video_recorder.get_currently_recording():
-        print("[EXPERIMENT-RECORDER] WARNING: Currently not recording.")
-        time.sleep(1)
+    # while not video_recorder.get_currently_recording():
+    #     print("[EXPERIMENT-RECORDER] WARNING: Currently not recording.")
+    #     time.sleep(1)
 
     time.sleep(2)
     nao.tts.request(NaoqiTextToSpeechRequest('please get in front of the Pepper'))
@@ -91,7 +90,8 @@ def run_test(video_recorder: Recorder):
     print(f'Start time: {start_time}')
 
     # Actually execute the motions
-    i=0
+    i = 0
+    df = pd.DataFrame(columns=['current_focus_point', 'frame_id', 'time'])
     while len(focus_point) > current_focus_point:
         frame_id = f'{i:010}'
         dictionary_data = {
@@ -99,9 +99,10 @@ def run_test(video_recorder: Recorder):
             'frame_id': frame_id,
             'time': current_time
         }
-        dictionary_list.append(dictionary_data)
+        df.loc[len(df.index)] = dictionary_data
+        #dictionary_list.append(dictionary_data)
         
-        if current_time > last_execution_time + 3:
+        if current_time > last_execution_time + time_inbetween:
             passed = f'{(current_time - start_time):010}'
             print(f'Time to execute the next calibration part at {current_time} - passed: {passed} - {focus_point[current_focus_point]}')
             next_item_times.append({
@@ -120,7 +121,7 @@ def run_test(video_recorder: Recorder):
         i+=1
 
     # Save the datapoints to a file
-    #save_dataframe_to_csv(dictionary_list, video_recorder.get_video_name() + 'data_frames')
+    save_dataframe_to_csv(df, video_recorder.get_video_name() + 'data_frames')
     save_dataframe_to_csv(next_item_times, video_recorder.get_video_name() + 'data_focus_times')
     nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0], recorded_joints=["LShoulderRoll"], recorded_times=[[0]])))
     nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0], recorded_joints=["RShoulderRoll"], recorded_times=[[0]])))
@@ -128,37 +129,32 @@ def run_test(video_recorder: Recorder):
     print("[CALIBRATION] Finished calibration recording")
     
 def on_image(image_message: CompressedImageMessage):
-    # we could use cv2.imshow here, but that does not work on Mac OSX
     imgs.put(image_message.image)
 
 def record_pepper(video_recorder: Recorder):
-    pepper_with_frames = []
     pepper_frameless = []
     i = 0
     print("[PEPPER] Info on Pepper recording:")
-    i_await=0
+    i_await = 0
     while not video_recorder.get_currently_recording():
         sys.stdout.write(f'\r[PEPPER] Awaiting 4K start ({i_await} seconds passed)')
         sys.stdout.flush()
         time.sleep(1)
-        i_await+=1
+        i_await += 1
     print("[PEPPER] Starting to calibrate video")
-    #imgs = queue.Queue()
+    
+    set_active(True)
     while video_recorder.get_currently_recording():
+        #pass
         img = imgs.get()
-        # Get the current time.
-        pepper_with_frames, pepper_frameless , i = append_info_to_list(pepper_with_frames, pepper_frameless, i, img[..., ::-1])
-        #if (cv.waitKey(1) == ord('q')) or not video_recorder.get_currently_recording(): # Press 'q' on the Python Window to stop the script
-        #    print("Breaking from Pepper output")
-        #    break
+        pepper_frameless , i = append_info_to_list(pepper_frameless, i)
+        write_single_frame(i, img[..., ::-1], video_recorder.get_video_name(), _4K = False)
     print("[PEPPER] Ended video recording loop Pepper")
     cv.destroyAllWindows()    
-    print("[PEPPER] Starting saving images from Pepper")
-    print(f'[PEPPER] Amount of frames in Pepper Dictionary: {len(pepper_frameless)}')
+    set_active(False)
+    print(f'[PEPPER] Starting to write the Pepper dataframe to IO ({len(pepper_frameless)} items)')
     save_dataframe_to_csv(pepper_frameless, video_recorder.get_video_name() + 'pepper')
-    video_recorder.save_images(pepper_with_frames, False)
     print("[PEPPER] Finished saving images from Pepper")
-    #video_recorder.finished_up_recording = True
 
 ######################## PARAMETER SETUP ########################
 folder_name = './calibration_images_output/'
@@ -167,37 +163,46 @@ ip = [
     '10.0.0.197', # 197 = Herbert
     '10.0.0.165', # 197 = Marvin
     '10.15.3.144' # 144 = Marvin
-    ][0]
+    ][3]
+participant_id = -1
 
 imgs = queue.Queue()
 
 # Pepper preparation
 conf = NaoqiCameraConf(vflip=0, auto_focus=True) # You can also adjust the brightness, contrast, sharpness, etc. See "NaoqiCameraConf" for more
-nao = Pepper(ip=ip, top_camera_conf=conf, motion_record_conf = NaoqiMotionRecorderConf(use_sensors=True, use_interpolation=True, samples_per_second=60))
+nao = Pepper(ip=ip, top_camera_conf=conf)#, motion_record_conf = NaoqiMotionRecorderConf(use_sensors=True, use_interpolation=True, samples_per_second=60))
 nao.top_camera.register_callback(on_image)
 nao.autonomous.request(NaoWakeUpRequest())
 nao.autonomous.request(NaoBasicAwarenessRequest(False))
 nao.autonomous.request(NaoBackgroundMovingRequest(False))
-nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, -.4], recorded_joints=['HeadPitch'], recorded_times=[[0, 1]])))
-nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 3], recorded_joints=["LShoulderRoll"], recorded_times=[[0, 1]])))
-nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, -3], recorded_joints=["RShoulderRoll"], recorded_times=[[0, 1]])))
+#nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, -.4], recorded_joints=['HeadPitch'], recorded_times=[[0, 1]])))
+#nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 3], recorded_joints=["LShoulderRoll"], recorded_times=[[0, 1]])))
+#nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, -3], recorded_joints=["RShoulderRoll"], recorded_times=[[0, 1]])))
 
 # Added moving the arms back down as to prevent overheating of the arms
-nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["LShoulderRoll"], recorded_times=[[0, 1]])))
-nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["RShoulderRoll"], recorded_times=[[0, 1]])))
+#nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["LShoulderRoll"], recorded_times=[[0, 1]])))
+#nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["RShoulderRoll"], recorded_times=[[0, 1]])))
 
 # Prepare the recorder
 video_recorder = Recorder()
 video_recorder.set_capture_device(0)
 video_recorder.set_is_calibration(True)
-#video_recorder.set_currently_recording(True)
+video_recorder.set_participant_id(participant_id)
 threader = Threader()
 
 # Execute the actual calibration
 show_current_stage('STARTING CALIBRATION')
+print(f'threading count: {threading.active_count()}')
+def run_nothing():
+    pass
+
+if video_recorder.participant_id == -1:
+    if str.lower(input("WARNING: PARTICIPANT ID IS -1. CHECK IF CORRECT!! continue [Y/n]?")) != 'y':
+        raise Exception
 threader.triple_parallel(video_recorder.start_video_recording, record_pepper, run_test, second_args=video_recorder, third_args=video_recorder)
-nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["LShoulderRoll"], recorded_times=[[0, 1]])))
-nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["RShoulderRoll"], recorded_times=[[0, 1]])))
+#threader.triple_parallel(run_nothing, run_nothing, run_test, third_args=video_recorder)
+#nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["LShoulderRoll"], recorded_times=[[0, 1]])))
+#nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["RShoulderRoll"], recorded_times=[[0, 1]])))
 
 #video_recorder.stop_video_recording()
 print("[CALIBRATION] Finished executing the calibration")

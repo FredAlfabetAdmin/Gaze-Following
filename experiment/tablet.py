@@ -33,3 +33,7 @@ def show_tablet_empty():
 def show_tablet_vu_logo():
     print(f"[TABLET] Showing VU")
     pepper.tablet_display_url.send_message(UrlMessage(vu_logo))
+
+# p = Pepper(ip='10.0.0.197')
+# set_pepper_tablet(p)
+# show_tablet_right()

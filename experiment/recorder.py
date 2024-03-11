@@ -3,10 +3,9 @@
 
 import os
 import cv2 as cv
-import datetime
 import time
-from tqdm import tqdm
 from auxillary import get_participant_folder, save_dataframe_to_csv, append_info_to_list
+from threader import write_single_frame
 
 class Recorder():
     # PARAMETERS
@@ -32,75 +31,65 @@ class Recorder():
         self.trial_set = _trial_set
     def set_is_calibration(self, _is_calibration):
         self.is_calibration = _is_calibration
-    def set_capture_device(self, capture_device):
-        self.capture_device = capture_device
+    def set_capture_device(self, _capture_device):
+        self.capture_device = _capture_device
     def set_currently_recording(self, _currently_recording):
         self.currently_recording = _currently_recording
-   
 
     # FUNCTIONS TO RECORD
     def start_video_recording(self):
-        ### Record_in_4K        
-        capture = cv.VideoCapture(0, cv.CAP_FFMPEG)
-        capture.set(cv.CAP_PROP_FOURCC, cv.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+        ### Record_in_4K
+        self.cap = cv.VideoCapture(self.capture_device)
+        self.cap.set(cv.CAP_PROP_FOURCC, cv.VideoWriter_fourcc('M', 'J', 'P', 'G'))
 
         # Check if the camera is opened correctly
-        if not capture.isOpened():
+        if not self.cap.isOpened():
             print("ERROR: Can't initialize camera capture")
             exit(1)
 
         # Set properties: frame width, frame height, and frames per second (FPS)
         resolutions = { 0:{'w':4096, 'h': 2160, 'fps':30},
-                        1:{'w':3840, 'h': 2160, 'fps':60},
+                        1:{'w':3840, 'h': 2160, 'fps':24},
                         2:{'w':1920, 'h': 1080, 'fps':30},
-                        3:{'w':1280, 'h': 720, 'fps':30}               
+                        3:{'w':1920, 'h': 1080, 'fps':60},
+                        4:{'w':1280, 'h': 720, 'fps':30}               
                     }
-        resolution_choice = 0
-        capture.set(cv.CAP_PROP_FRAME_WIDTH, resolutions[resolution_choice]['w'])
-        capture.set(cv.CAP_PROP_FRAME_HEIGHT, resolutions[resolution_choice]['h'])
-        capture.set(cv.CAP_PROP_FPS, resolutions[resolution_choice]['fps'])
+        resolution_choice = 3
+        self.cap.set(cv.CAP_PROP_FRAME_WIDTH, resolutions[resolution_choice]['w'])
+        self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, resolutions[resolution_choice]['h'])
+        self.cap.set(cv.CAP_PROP_FPS, resolutions[resolution_choice]['fps'])
 
         # Get the resolution
-        width = int(capture.get(cv.CAP_PROP_FRAME_WIDTH))
-        height = int(capture.get(cv.CAP_PROP_FRAME_HEIGHT))
-        fps = int(capture.get(cv.CAP_PROP_FPS))
+        width = int(self.cap.get(cv.CAP_PROP_FRAME_WIDTH))
+        height = int(self.cap.get(cv.CAP_PROP_FRAME_HEIGHT))
+        fps = int(self.cap.get(cv.CAP_PROP_FPS))
         print(f"Resolution W: {width} - H: {height} - FPS: {fps}")
 
-        
-        
-        ### ORIGINAL
-        # Some Parameter setup
-        #self.cap = cv.VideoCapture(self.capture_device, cv.CAP_GSTREAMER) # Capture 4K
-        
-        #set_width_success = self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 3840)
-        #set_height_success =self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 2160)
-        #print(f"Initial setting went W: {set_width_success} - {cv.CAP_PROP_FRAME_WIDTH} & H: {set_height_success} - {cv.CAP_PROP_FRAME_HEIGHT}")
-        #if not set_width_success:
-            #set_width_success = self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
-        #if not set_height_success:
-            #set_height_success = self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
-        #print(f"If wrong, setting went W: {set_width_success} & H: {set_height_success}")
-
+        # Only start when it is actually recording
         self.currently_recording = True
         self.finished_up_recording = False
-        with_frames = []
         frameless = []
+        frame_buffer = []
         i = 0
-        #print(f"Backend mode: {self.cap.getBackendName()}")
-
-        # Only start when it is actually recording
-        start_time = time.time()
         num_frames = 0
+        start_time = time.time()
 
+        # The actual recording loop
         while self.cap.isOpened() and self.currently_recording:
-            # Get the frame
             ret, frame = self.cap.read()
             if not ret:
                 print("[VIDEO] Can't receive frame (stream end?). Exiting ...") # From the OpenCV tutorial
                 break
         
             # Get the current time.
-            with_frames, frameless, i = append_info_to_list(with_frames, frameless, i, frame)
+            frameless, i = append_info_to_list(frameless, i)
+            #frame_buffer.append(frame)
+            write_single_frame(i, frame, self.get_video_name(), True)
+
+
+            # if len(frame_buffer) == 4:
+            #     write_frame_buffer(i, frame_buffer, self.get_video_name())
+            #     frame_buffer = []
             if cv.waitKey(1) == ord('q'): # Press 'q' on the Python Window to stop the script
                 break
             
@@ -115,31 +104,17 @@ class Recorder():
                 start_time = time.time()
                 num_frames = 0
 
-        print("[VIDEO] Done with recording the 4K")
+        # Finish up recording and save the data to IO
+        print("[VIDEO] Ended video recording loop 4K")
         self.finished_up_recording = True
         self.stop_video_recording()
         cv.destroyAllWindows()
+        print(f'[VIDEO] Starting to write the 4K dataframe to IO ({len(frameless)} items)')
         save_dataframe_to_csv(frameless, self.get_video_name() + '4K')
-        self.save_images(with_frames, True)
         print("[VIDEO] Finished saving images from 4K")
-
-    # Save all images to the disk.
-    def save_images(self, dictionary_list, _4K = True):
-        device = '4K' if _4K else 'Pepper'
-        video_name = self.get_video_name() 
-        video_name += '_' + device + '_'
-        print("[I/O] Starting saving images from 4K")
-        for index in tqdm(range(len(dictionary_list))):
-            #print(f"Still saving video_recorder ({device}), Amount left : {len(dictionary_list) - index}")
-            one_frame_dict = dictionary_list[index]
-            image_id = one_frame_dict['ID']
-            image_frame = one_frame_dict['frame']
-            cv.imwrite(f"./{video_name}_{image_id}.jpg", image_frame)        
-        print(f"[I/O] Finished saving images from {device}")
 
     # Stop recording the video
     def stop_video_recording(self):
-        #global cap, out, currently_recording, finished_up_recording
         self.currently_recording = False
         print("[VIDEO] Stopping Recording 4K")
         while not self.finished_up_recording:
@@ -149,23 +124,13 @@ class Recorder():
         # Release everything if job is finished
         print("[VIDEO] Finished stopping 4K")
         self.cap.release()
-        #self.out.release()
         cv.destroyAllWindows()
         self.currently_recording = False
 
     # This function generates a folder for the output of the video with a name for a video, based on the current (date-)time.
     def get_video_name(self):
-        # Parameters
         video_output_folder = get_participant_folder(self.participant_id)
-
-        now = str(datetime.datetime.now())
-        #video_plus_date = str(video_output_folder + now.replace(':', '_') + "_")
-        #video_plus_date = ''
         file_output = video_output_folder + f'part_{self.participant_id}_trialset_{self.trial_set}_'
         file_output += 'calibration_' if self.get_is_calibration else 'experiment_'
-        
-        # Create the folders
         os.makedirs(video_output_folder, exist_ok=True)
-        #os.makedirs(video_plus_date, exist_ok=True)
-        
         return file_output

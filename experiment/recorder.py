@@ -64,6 +64,10 @@ class Recorder():
         height = int(self.cap.get(cv.CAP_PROP_FRAME_HEIGHT))
         fps = int(self.cap.get(cv.CAP_PROP_FPS))
         print(f"Resolution W: {width} - H: {height} - FPS: {fps}")
+        if width < 1920 or height < 1080:
+            res_low = input("RESOLUTION IS NOT FULL QUALITY. CONFIRM CONTINUATION? [Y/n]")
+            if str.lower(res_low) != 'y':
+                raise Exception
 
         # Only start when it is actually recording
         self.currently_recording = True

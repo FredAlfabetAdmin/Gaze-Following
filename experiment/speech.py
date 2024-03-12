@@ -21,8 +21,13 @@ def talk_right():
     talk("Please tap the " + "right" + "arrow")
 
 def talk_ready():
-    talk("When ready, please click Y")
+    talk("When ready, please click Y and then ENTER")
     print("[SPEECH] Request Ready")
+
+def talk_existing_participant():
+    talk("Participant already has a folder. Check with experimenter.")
+    print("[SPEECH] Request Ready")
+
 
 def talk(value):
     pepper.tts.request(NaoqiTextToSpeechRequest(value))

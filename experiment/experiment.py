@@ -16,33 +16,29 @@ open terminal: cd experiment ; python experiment.py
 
 #------------------------------- Preparations: -------------------------------#
 # Imports
-import datetime, time
-
+import cv2 as cv
+import time
+import sys
+import queue
 from sic_framework.devices import Pepper
 from sic_framework.devices.common_naoqi.naoqi_motion_recorder import NaoqiMotionRecorderConf
+
+from sic_framework.core.message_python2 import CompressedImageMessage
+#from sic_framework.devices.common_naoqi.naoqi_camera import NaoqiCameraConf
+#from sic_framework.devices.common_naoqi.naoqi_motion import NaoqiIdlePostureRequest
+from sic_framework.devices.common_naoqi.naoqi_motion_recorder import PlayRecording, NaoqiMotionRecording, NaoqiMotionRecorderConf
+from sic_framework.devices.common_naoqi.naoqi_autonomous import NaoBasicAwarenessRequest, NaoBackgroundMovingRequest, NaoWakeUpRequest#, NaoRestRequest
+#from sic_framework.devices.common_naoqi.naoqi_stiffness import Stiffness
+from sic_framework.devices.pepper import Pepper
+#from sic_framework.devices.common_naoqi.naoqi_text_to_speech import NaoqiTextToSpeechRequest
 
 from motions import move_peppers_left, move_peppers_right, set_pepper_motion, move_peppers_static
 from tablet import show_tablet_empty, show_tablet_right, show_tablet_vu_logo, show_tablet_left, set_pepper_tablet
 from speech import talk_left, talk_right, set_pepper_speech, talk_intro, talk_preparations, talk_ready
-from auxillary import show_current_stage, left_or_right, confirm_ready, dump_trialset_to_json, create_data_folders
+from auxillary import show_current_stage, left_or_right, confirm_ready, dump_trialset_to_json, create_data_folders, save_dataframe_to_csv, append_info_to_list, get_brio_id
 from randomizer import create_random_trials
 from recorder import Recorder#, start_video_recording, stop_video_recording, set_participant_id, set_trial_set, get_is_currently_recording
-from threader import Threader #,start_listening, parallel
-
-# Variables
-port = 8080
-#machine_ip = '10.0.0.240'
-#robot_ip = '10.0.0.164' # Marvin # Has SSL error.
-#robot_ip = '10.0.0.165' # Marvin # Has SSL error.
-robot_ip = '10.15.3.144' # Marvin # Has SSL error.
-#robot_ip = '10.0.0.180' # Ada
-#robot_ip='10.15.3.226'
-capture_device = 0
-participant_id = 2
-
-# Pepper device setup
-conf = NaoqiMotionRecorderConf(use_sensors=True, use_interpolation=True, samples_per_second=60)
-pepper = Pepper(robot_ip, motion_record_conf = conf)
+from threader import Threader, write_single_frame, set_active #,start_listening, parallel
 
 #------------------------------- Functions: -------------------------------#
 # test_left and test_right are there for when the robot is not there but you still want to test some of the code.
@@ -57,11 +53,6 @@ def test_right():
 def execute_set_of_trials(args):
     video_recorder, trial_set = args
 
-    # Start recording the video
-    while not video_recorder.get_is_currently_recording():
-        print("[EXPERIMENT-RECORDER] WARNING: Currently not recording.")
-        time.sleep(1)
-    
     # Confirm if the participant is ready to start a new trial
     Threader().parallel(confirm_ready, talk_ready)
 
@@ -78,6 +69,7 @@ def execute_set_of_trials(args):
     for trial in trials:
         print(f"** Executing trial: {current_trial} **")
         talk_intro(trial["primary"])
+        trial['start'] = time.time()
 
         # To determine the Ground Object (GO)
         if trial['first_item'] == 'visual':
@@ -101,9 +93,10 @@ def execute_set_of_trials(args):
 
         # Execute the actual code.
         threader = Threader() # Possibly an entry into catching the return value of start_listening
-        threader.parallel(execute_single_trial, threader.start_listening, [first_event, second_event, threader], [video_recorder])
+        threader.parallel(execute_single_trial, threader.start_listening, first_args = [first_event, second_event, threader])
 
         # Do something with the resulting trial
+        trial['end'] = time.time()
         trial_keystroke = threader.get_resulting_output()
         trial['trial_id'] = current_trial
         trial['result'] = trial['direction'] == trial_keystroke['reason']
@@ -115,14 +108,76 @@ def execute_set_of_trials(args):
         show_tablet_empty()
         current_trial += 1
         time.sleep(3) # Remove later.
+        #i+=1
+    
+    print(trial_data)
     dump_trialset_to_json(trial_data, trial_set, participant_id)
+    #video_recorder.stop_video_recording()
+
+    # Save the datapoints to a file
+    #save_dataframe_to_csv(df, video_recorder.get_video_name() + 'data_frames')
+    #save_dataframe_to_csv(next_item_times, video_recorder.get_video_name() + 'data_focus_times')
+    pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0], recorded_joints=["LShoulderRoll"], recorded_times=[[0]])))
+    pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0], recorded_joints=["RShoulderRoll"], recorded_times=[[0]])))
     video_recorder.stop_video_recording()
+    print("[CALIBRATION] Finished calibration recording")
 
 def execute_single_trial(args):# first_event, second_event, current_trial):
      first_event, second_event, threader = args
      threader.parallel(first_event, second_event)
+    
+def on_image(image_message: CompressedImageMessage):
+    imgs.put(image_message.image)
+
+def record_pepper(video_recorder: Recorder):
+    pepper_frameless = []
+    i = 0
+    print("[PEPPER] Info on Pepper recording:")
+    i_await = 0
+    while not video_recorder.get_currently_recording():
+        sys.stdout.write(f'\r[PEPPER] Awaiting 4K start ({i_await} seconds passed)')
+        sys.stdout.flush()
+        time.sleep(1)
+        i_await += 1
+    print("[PEPPER] Starting to calibrate video")
+    
+    set_active(True)
+    while video_recorder.get_currently_recording():
+        #pass
+        img = imgs.get()
+        pepper_frameless , i = append_info_to_list(pepper_frameless, i)
+        write_single_frame(i, img[..., ::-1], video_recorder.get_video_name(), _4K = False)
+    print("[PEPPER] Ended video recording loop Pepper")
+    cv.destroyAllWindows()    
+    set_active(False)
+    print(f'[PEPPER] Starting to write the Pepper dataframe to IO ({len(pepper_frameless)} items)')
+    save_dataframe_to_csv(pepper_frameless, video_recorder.get_video_name() + 'pepper')
+    print("[PEPPER] Finished saving images from Pepper")
 
 #------------------------------- CODE: -------------------------------#
+     
+# Variables
+port = 8080
+folder_name = './calibration_images_output/'
+ip = [
+    '10.0.0.148', # 148 = Alan
+    '10.0.0.197', # 197 = Herbert
+    '10.0.0.165', # 197 = Marvin
+    '10.15.3.144' # 144 = Marvin
+    ][2]
+participant_id = 1
+
+imgs = queue.Queue()
+#capture_device = 0
+participant_id = 1
+
+# Pepper device setup
+conf = NaoqiMotionRecorderConf(use_sensors=True, use_interpolation=True, samples_per_second=60)
+pepper = Pepper(ip, motion_record_conf = conf)
+pepper.top_camera.register_callback(on_image)
+pepper.autonomous.request(NaoWakeUpRequest())
+pepper.autonomous.request(NaoBasicAwarenessRequest(False))
+pepper.autonomous.request(NaoBackgroundMovingRequest(False))
 # Preparations
 show_current_stage("Starting preparations")
 
@@ -143,7 +198,7 @@ talk_preparations()
 show_tablet_vu_logo()
 show_current_stage("Finishing up")
 
-if participant_id == 1:
+if participant_id == -1:
     print("Warning: participant ID is currently at default (-1)")
 
 create_data_folders(participant_id)
@@ -151,12 +206,13 @@ create_data_folders(participant_id)
 experiment_length = 2
 for trial_number in range(experiment_length):
     video_recorder = Recorder()
-    video_recorder.set_capture_device(capture_device)
+    video_recorder.set_capture_device(get_brio_id())
     video_recorder.set_participant_id(participant_id)
     video_recorder.set_trial_set(trial_number)
     threader = Threader()
 
-    threader.parallel(video_recorder.start_video_recording, execute_set_of_trials, None, [video_recorder,trial_number])
+    threader.triple_parallel(video_recorder.start_video_recording, record_pepper, execute_set_of_trials, second_args=video_recorder, third_args=[video_recorder,trial_number])
+    #threader.parallel(video_recorder.start_video_recording, execute_set_of_trials, None, [video_recorder,trial_number])
     video_recorder.stop_video_recording()
     print(f"TRIAL SET {trial_number} was completed!")
     if trial_number < experiment_length - 1:
@@ -164,56 +220,3 @@ for trial_number in range(experiment_length):
 
 show_current_stage("[EXPERIMENT] END OF EXPERIMENT!")
 print("fin")
-
-############################### TO DO: ##########################
-# = Make the second item and the timer work at the same time. 
-#   - Initial test made with #threader (https://github.com/FredAlfabetAdmin/Gaze-Following/blob/dd2a264518d9b516316af6c65dc34b7d9d2f1b0c/experiment/threader.py)
-#   - Synchronize the input timer count-start with the start-time of the measurement (consider having one that starts before the code is executed and one that starts the exact moment that the 'left' word is spoken - systematic shift/bias?)
-
-# = Clean the actuators from the output.
-#   - The current implementation loads the actuators during the 'preparation' and should not be displayed after that.
-
-# = Append the LShoulderPitch and RShoulderPitch to the actuators BEFORE the experiment starts (perhaps this causes the robot to move both arms at the same time?)
-#   - Remove the initial forward motion of both arms
-#   - Add the sidewards motion of both arms to confirm the arms moving around
-#   - Current implementation only makes use of the stiffness. This might be good enough for our experiment. Requires further inspection if current implementation is insufficient.
-
-# = Measure the duration that it takes for the speech, tablet and gesture to be started and executed.
-#   - Possibly not required anymore
-
-# = Remove the time.sleep at the end of each trial. Normalize based on inputs
-#   - Consider if using a 1 second time sleep between the choice and the actual input is more user friendly.
-
-# = Decide on post-trial resetting of tablet and motion.
-#   - Perhaps the tablet and the motions are already turning off?
-
-# = Create a storage of the duration of each trial:
-#   - Setup
-#   - Response duration
-#   - Improve the dictionary creation and writing. (consider 'json' module)
-
-# = Save a video or photo from every trial, per trial set or for the whole experiment?
-#   - Research the possiblity in terms of data-writing, etc. Per trial might clog up the system, but allows for earlier catch of errors.
-#   - Check if using the webcam/4K causes the input to be lit up with the white circle.
-#   - Confirm that the speed between trails is OK and do not require a full shot-down and start-up to record. (might lead to errors and non-recordings otherwise?)
-#   - Current setup is aimed at recording a video every trial set.
-
-# = Generate some practice-trials
-#   - Can probably use a subset of the code written in 'randomizer.create_random_trials()'
-
-# Five different Trial sets
-# = Implement the five different trial-sets.
-# = Confirm the textual instructions for the participant (part of five different trial-sets)
-
-# = Determine what to do when a user clicks on a button that is not the LEFT or RIGHT arrow key.
-
-# = Determine what to do when a trial is done
-#   - Save or append it to a file?
-#   - Confirmation or denial of correct input/output
-
-# = Rename 'visual' as it might confuse the participant for the gesture?
-
-# =  Convert the data output from two individual folders to one 'participant' folder.
-#   - Can also implement a check to see if that participant already has an ID. Without it might lead to overwriting data.
-
-# = Remove the 'motions' folder

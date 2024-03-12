@@ -72,7 +72,7 @@ def run_test(video_recorder: Recorder):
     #'''
     
     # Start recording the video
-    print(video_recorder.get_currently_recording())
+    # print(video_recorder.get_currently_recording())
     # while not video_recorder.get_currently_recording():
     #     print("[EXPERIMENT-RECORDER] WARNING: Currently not recording.")
     #     time.sleep(1)
@@ -164,7 +164,7 @@ ip = [
     '10.0.0.165', # 197 = Marvin
     '10.15.3.144' # 144 = Marvin
     ][3]
-participant_id = -1
+participant_id = 1
 
 imgs = queue.Queue()
 
@@ -192,7 +192,6 @@ threader = Threader()
 
 # Execute the actual calibration
 show_current_stage('STARTING CALIBRATION')
-print(f'threading count: {threading.active_count()}')
 def run_nothing():
     pass
 

@@ -5,7 +5,7 @@
 import itertools
 import random
 def create_random_trials():
-    items = ['speech', 'visual', 'gesture']
+    items = ['speech', 'tablet', 'gesture']
     combinations = list(itertools.combinations(items, 2))
     trials = []
     for combination in combinations:
@@ -15,7 +15,7 @@ def create_random_trials():
                     trials.append({
                         'first_item':combination[0],
                         'second_item':combination[1],
-                        'primary': combination[0] if x == 0 else combination[1],
+                        #'primary': combination[0] if x == 0 else combination[1],
                         'congruent': y == 0,
                         'direction': 'left' if z == 0 else 'right'
                     })

@@ -18,9 +18,10 @@ import pandas as pd
 import sys
 import threading
 
-from auxillary import show_current_stage,  save_dataframe_to_csv, append_info_to_list
+from auxillary import show_current_stage,  save_dataframe_to_csv, append_info_to_list, get_brio_id
 from recorder import Recorder
 from threader import Threader, write_single_frame, set_active, start_processing_images
+from settings import participant_id, ip
 
 ############################################################
 def calibrate():
@@ -52,15 +53,15 @@ def run_test(video_recorder: Recorder):
         'please look at my head camera',
         'please look at my face',
         'please look at my tablet',
-        'please look at my left elbow',
-        'please look at my right elbow',
+        'please look at  left elbow',
+        'please look at  right elbow',
         'the part ended, please take off your glasses',
         ' ',
         'please look at my head camera',
         'please look at my face ',
         'please look at my tablet',
-        'please look at my left elbow',
-        'please look at my right elbow',
+        'please look at  left elbow',
+        'please look at  right elbow',
         'calibration finished! thank you very much!',
         '']
 
@@ -83,6 +84,13 @@ def run_test(video_recorder: Recorder):
     nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[-1], recorded_joints=["RShoulderRoll"], recorded_times=[[1]])))
     nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, -.3], recorded_joints=['HeadPitch'], recorded_times=[[0, 1]])))
     
+    # This line for some reason causes a slight movement of the HeadYaw to the left or right.
+    nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, -.4], recorded_joints=['HeadPitch'], recorded_times=[[0, 1]]))) 
+    
+    # Recalibrate the head yaw to be centered
+    nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[-0.5, 0.5, 0], recorded_joints=['HeadYaw'], recorded_times=[[0, 1, 2]])))
+    nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=['HeadYaw'], recorded_times=[[0, 1]])))
+
     # Time tracking
     start_time = time.time()
     current_time = time.time()
@@ -158,13 +166,7 @@ def record_pepper(video_recorder: Recorder):
 
 ######################## PARAMETER SETUP ########################
 folder_name = './calibration_images_output/'
-ip = [
-    '10.0.0.148', # 148 = Alan
-    '10.0.0.197', # 197 = Herbert
-    '10.0.0.165', # 197 = Marvin
-    '10.15.3.144' # 144 = Marvin
-    ][3]
-participant_id = 1
+#participant_id = 3
 
 imgs = queue.Queue()
 
@@ -185,7 +187,7 @@ nao.autonomous.request(NaoBackgroundMovingRequest(False))
 
 # Prepare the recorder
 video_recorder = Recorder()
-video_recorder.set_capture_device(0)
+video_recorder.set_capture_device(get_brio_id())
 video_recorder.set_is_calibration(True)
 video_recorder.set_participant_id(participant_id)
 threader = Threader()

@@ -86,7 +86,7 @@ class Threader():
 
         if lr:
             self.key_pressed = _key
-            print('stopped?')
+            #print('stopped?')
             return False
 
     def listen_for_keys(self):
@@ -108,7 +108,7 @@ class Threader():
             else:
                 reason = 'right'
             self.set_resulting_output({'valid':True, 'reason': reason, 'duration':time.time() - start_time})
-            print('key was pressed')
+            #print('key was pressed')
     
     '''
     # This function awaits the actual key pressed

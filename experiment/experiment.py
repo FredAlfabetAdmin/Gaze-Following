@@ -32,13 +32,14 @@ from sic_framework.devices.common_naoqi.naoqi_autonomous import NaoBasicAwarenes
 from sic_framework.devices.pepper import Pepper
 #from sic_framework.devices.common_naoqi.naoqi_text_to_speech import NaoqiTextToSpeechRequest
 
-from motions import move_peppers_left, move_peppers_right, set_pepper_motion, move_peppers_static
+from motions import move_pepper_left, move_pepper_right, set_pepper_motion, move_peppers_static
 from tablet import show_tablet_empty, show_tablet_right, show_tablet_vu_logo, show_tablet_left, set_pepper_tablet
-from speech import talk_left, talk_right, set_pepper_speech, talk_intro, talk_preparations, talk_ready
+from speech import talk_left, talk_right, set_pepper_speech, talk_intro, talk_preparations, talk_ready, finished_round, talk_response_slow, talk_wrong_key, talk_change_eyetracker, talk_is_training
 from auxillary import show_current_stage, left_or_right, confirm_ready, dump_trialset_to_json, create_data_folders, save_dataframe_to_csv, append_info_to_list, get_brio_id
 from randomizer import create_random_trials
 from recorder import Recorder#, start_video_recording, stop_video_recording, set_participant_id, set_trial_set, get_is_currently_recording
 from threader import Threader, write_single_frame, set_active #,start_listening, parallel
+from settings import participant_id, ip
 
 #------------------------------- Functions: -------------------------------#
 # test_left and test_right are there for when the robot is not there but you still want to test some of the code.
@@ -59,37 +60,46 @@ def execute_set_of_trials(args):
     time.sleep(3)
     
     # If needed, grab a subset of the trials
-    trials = create_random_trials()[0:5] # Remove this later to use all trials and not just a singular one.
+    trials = create_random_trials()
+    if video_recorder.get_is_training():
+        trials = trials[0:5]
     current_trial = 0
 
     # Execute all the trials in the trials set
     show_current_stage("Executing trials")
     print("[EXPERIMENT] NOW RECORDING!")
     trial_data = {}
+    print(len(trials))
     for trial in trials:
-        print(f"** Executing trial: {current_trial} **")
-        talk_intro(trial["primary"])
+        print(f"** Executing trial: {current_trial + 1} / {len(trials)}**")
+        #talk_intro(trial["primary"])
+        talk_intro(trial["first_item"])
         trial['start'] = time.time()
 
-        # To determine the Ground Object (GO)
-        if trial['first_item'] == 'visual':
+        if trial['first_item'] == 'tablet':
             #print("Showing tablet")
-            first_event = show_tablet_left if left_or_right(trial['congruent'], trial['direction']) else show_tablet_right
+            #first_event = show_tablet_left if left_or_right(trial['congruent'], trial['direction']) == 'left' else show_tablet_right
+            first_event = show_tablet_left if trial['direction'] == 'left' else show_tablet_right
         elif trial['first_item'] == 'gesture':
             #print("Moving gesture")
-            first_event = move_peppers_left if left_or_right(trial['congruent'], trial['direction']) else move_peppers_right
+            #first_event = move_pepper_left if left_or_right(trial['congruent'], trial['direction']) == 'left' else move_pepper_right
+            first_event = move_pepper_left if trial['direction'] == 'left' else move_pepper_right
         else:
             #print("Talking")
-            first_event = talk_left if left_or_right(trial['congruent'], trial['direction']) else talk_right
+            #first_event = talk_left if left_or_right(trial['congruent'], trial['direction']) == 'left' else talk_right
+            first_event = talk_left if trial['direction'] == 'left' else talk_right
 
         # And the Figure Object (FO)
-        if trial['second_item'] == 'visual':
-            print()
-            second_event = show_tablet_right if trial['direction'] == 'right' else show_tablet_left 
+        if trial['second_item'] == 'tablet':
+            second_event = show_tablet_left if (trial['direction'] == 'left' and trial['congruent']) or (trial['direction'] =='right' and trial['congruent'] == False) else show_tablet_right
         elif trial['second_item'] == 'gesture':
-            second_event = move_peppers_left if trial['direction'] == 'right' else move_peppers_right
+            second_event = move_pepper_left if (trial['direction'] == 'left' and trial['congruent']) or (trial['direction'] =='right' and trial['congruent'] == False) else move_pepper_right
         else:
-            second_event = talk_left if trial['direction'] == 'right' else talk_right
+            print('talking 2nd')
+            second_event = talk_left if (trial['direction'] == 'left' and trial['congruent']) or (trial['direction'] =='right' and trial['congruent'] == False) else talk_right
+        print(f'trail["direction"]: {trial["direction"]} - trial["congruent"]: {trial["congruent"]}')
+        print(f'first event: {first_event}')
+        print(f'second event: {second_event} - trail["direction"]: {trial["direction"]}')
 
         # Execute the actual code.
         threader = Threader() # Possibly an entry into catching the return value of start_listening
@@ -102,16 +112,25 @@ def execute_set_of_trials(args):
         trial['result'] = trial['direction'] == trial_keystroke['reason']
         trial['keystroke'] = trial_keystroke
         trial_data[current_trial] = trial
-        # Consider writing the 'trial' to a specific file instead of one big dictionary (leaky)
+        
+        # Extra information for the participant during training:
+        if video_recorder.get_is_training():
+            # If response too slow:
+            if trial_keystroke['reason'] == 'overtime':
+                talk_response_slow()
+            
+            # If wrong key press:
+            if not trial['result'] and trial_keystroke['valid']:
+                talk_wrong_key()
 
         # Reset the Pepper
         show_tablet_empty()
         current_trial += 1
         time.sleep(3) # Remove later.
         #i+=1
-    
+    finished_round()
     print(trial_data)
-    dump_trialset_to_json(trial_data, trial_set, participant_id)
+    dump_trialset_to_json(trial_data, video_recorder.get_video_name())
     #video_recorder.stop_video_recording()
 
     # Save the datapoints to a file
@@ -120,7 +139,7 @@ def execute_set_of_trials(args):
     pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0], recorded_joints=["LShoulderRoll"], recorded_times=[[0]])))
     pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0], recorded_joints=["RShoulderRoll"], recorded_times=[[0]])))
     video_recorder.stop_video_recording()
-    print("[CALIBRATION] Finished calibration recording")
+    print("[EXPERIMENT] Finished experiment recording")
 
 def execute_single_trial(args):# first_event, second_event, current_trial):
      first_event, second_event, threader = args
@@ -158,18 +177,13 @@ def record_pepper(video_recorder: Recorder):
      
 # Variables
 port = 8080
-folder_name = './calibration_images_output/'
-ip = [
-    '10.0.0.148', # 148 = Alan
-    '10.0.0.197', # 197 = Herbert
-    '10.0.0.165', # 197 = Marvin
-    '10.15.3.144' # 144 = Marvin
-    ][2]
-participant_id = 1
+folder_name = './experiment_images_output/'
+
+#participant_id = 1
 
 imgs = queue.Queue()
 #capture_device = 0
-participant_id = 1
+#participant_id = 1
 
 # Pepper device setup
 conf = NaoqiMotionRecorderConf(use_sensors=True, use_interpolation=True, samples_per_second=60)
@@ -203,20 +217,48 @@ if participant_id == -1:
 
 create_data_folders(participant_id)
 
-experiment_length = 2
-for trial_number in range(experiment_length):
-    video_recorder = Recorder()
-    video_recorder.set_capture_device(get_brio_id())
-    video_recorder.set_participant_id(participant_id)
-    video_recorder.set_trial_set(trial_number)
-    threader = Threader()
+training = False
+if training:
+    experiment_length = 2
+    for trial_number in range(0, experiment_length):
+        talk_is_training()
+        video_recorder = Recorder()
+        video_recorder.set_capture_device(get_brio_id())
+        video_recorder.set_participant_id(participant_id)
+        video_recorder.set_trial_set(trial_number)
+        video_recorder.set_is_training(True)
+        video_recorder.set_is_calibration(False)
+        threader = Threader()
 
-    threader.triple_parallel(video_recorder.start_video_recording, record_pepper, execute_set_of_trials, second_args=video_recorder, third_args=[video_recorder,trial_number])
-    #threader.parallel(video_recorder.start_video_recording, execute_set_of_trials, None, [video_recorder,trial_number])
-    video_recorder.stop_video_recording()
-    print(f"TRIAL SET {trial_number} was completed!")
-    if trial_number < experiment_length - 1:
-        confirm_ready()
+        threader.triple_parallel(video_recorder.start_video_recording, record_pepper, execute_set_of_trials, second_args=video_recorder, third_args=[video_recorder,trial_number])
+        #threader.parallel(video_recorder.start_video_recording, execute_set_of_trials, None, [video_recorder,trial_number])
+        video_recorder.stop_video_recording()
+        print(f"TRIAL SET {trial_number} was completed!")
+        if trial_number < experiment_length - 1:
+            confirm_ready()
+
+else:
+    experiment_length = 10
+    for trial_number in range(0, experiment_length):
+        if trial_number == 5:
+            talk_change_eyetracker()
+            while input('PRESS Y AND ENTER TO CONTINUE! [y]').lower() != "y":
+                pass
+        
+        video_recorder = Recorder()
+        video_recorder.set_capture_device(get_brio_id())
+        video_recorder.set_participant_id(participant_id)
+        video_recorder.set_trial_set(trial_number)
+        video_recorder.set_is_training(False)
+        video_recorder.set_is_calibration(False)
+        threader = Threader()
+
+        threader.triple_parallel(video_recorder.start_video_recording, record_pepper, execute_set_of_trials, second_args=video_recorder, third_args=[video_recorder,trial_number])
+        #threader.parallel(video_recorder.start_video_recording, execute_set_of_trials, None, [video_recorder,trial_number])
+        video_recorder.stop_video_recording()
+        print(f"TRIAL SET {trial_number} was completed!")
+        if trial_number < experiment_length - 1:
+            confirm_ready()
 
 show_current_stage("[EXPERIMENT] END OF EXPERIMENT!")
 print("fin")

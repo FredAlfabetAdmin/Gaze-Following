@@ -25,22 +25,28 @@ def move_pepper_tpose():
     pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[1], recorded_joints=["LShoulderRoll"], recorded_times=[[1]])))
     pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[-1], recorded_joints=["RShoulderRoll"], recorded_times=[[1]])))
 
-def move_peppers_left(angle = 1):
+def move_pepper_left(angle = 1):
     print("[MOVING] Left arm")
     move_joints(angle, chain[0]) # always positive
 
-def move_peppers_right(angle = -1):
+def move_pepper_right(angle = -1):
     print("[MOVING] Right arm")
     move_joints(angle, chain[1]) # always negative
 
 def move_peppers_static():
     print("[MOVING] Resetting both arms")
-    move_peppers_left(angle = 1)
-    move_peppers_right(angle = -1)
+    move_pepper_left(angle = 1)
+    move_pepper_right(angle = -1)
 
 def move_peppers_head():
     print("[MOVING] Calibrating Head")
-    pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, -.4], recorded_joints=['HeadPitch'], recorded_times=[[0, 1]])))
+
+    # This line for some reason causes a slight movement of the HeadYaw to the left or right.
+    pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, -.4], recorded_joints=['HeadPitch'], recorded_times=[[0, 1]]))) 
+    
+    # Recalibrate the head yaw to be centered
+    pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[-0.5, 0.5, 0], recorded_joints=['HeadYaw'], recorded_times=[[0, 1, 2]])))
+    pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=['HeadYaw'], recorded_times=[[0, 1]])))
 
 def set_pepper_motion(_pepper):
     global pepper
@@ -51,6 +57,3 @@ def set_pepper_motion(_pepper):
     pepper.stiffness.request(Stiffness(0.7, chain))
     pepper.stiffness.request(Stiffness(0.7, ["RShoulderPitch","LShoulderPitch"]))
     move_peppers_head()
-    #move_peppers_left()
-    #move_peppers_right()
-    #move_shoulder_pitch()

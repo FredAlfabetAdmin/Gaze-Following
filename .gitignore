@@ -13,6 +13,8 @@
 .project
 .settings
 .idea
+experiment/data_first_exhaustion/
+experiment/data_second_exhaustion/
 
 .history/*
 

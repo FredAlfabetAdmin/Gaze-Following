@@ -17,12 +17,15 @@ class Recorder():
     current_focus_point = None
     cap: cv.VideoCapture = None
     is_calibration = False
+    is_training = False
 
     # GETTERS     
     def get_currently_recording(self):
         return self.currently_recording
     def get_is_calibration(self):
         return self.is_calibration
+    def get_is_training(self):
+        return self.is_training
 
     # SETTERS
     def set_participant_id(self,_participant_id):
@@ -31,6 +34,8 @@ class Recorder():
         self.trial_set = _trial_set
     def set_is_calibration(self, _is_calibration):
         self.is_calibration = _is_calibration
+    def set_is_training(self, _is_training):
+        self.is_training = _is_training
     def set_capture_device(self, _capture_device):
         self.capture_device = _capture_device
     def set_currently_recording(self, _currently_recording):
@@ -64,7 +69,12 @@ class Recorder():
         height = int(self.cap.get(cv.CAP_PROP_FRAME_HEIGHT))
         fps = int(self.cap.get(cv.CAP_PROP_FPS))
         print(f"Resolution W: {width} - H: {height} - FPS: {fps}")
-
+        '''
+        if width < 1920 or height < 1080:
+            res_low = input("RESOLUTION IS NOT FULL QUALITY. CONFIRM CONTINUATION? [Y/n]")
+            if str.lower(res_low) != 'y':
+                raise Exception
+        '''
         # Only start when it is actually recording
         self.currently_recording = True
         self.finished_up_recording = False
@@ -131,6 +141,11 @@ class Recorder():
     def get_video_name(self):
         video_output_folder = get_participant_folder(self.participant_id)
         file_output = video_output_folder + f'part_{self.participant_id}_trialset_{self.trial_set}_'
-        file_output += 'calibration_' if self.get_is_calibration else 'experiment_'
+        if self.get_is_training():
+            file_output += 'training_'
+        elif self.get_is_calibration():
+            file_output += 'calibration_'
+        else:
+            file_output += 'experiment_'
         os.makedirs(video_output_folder, exist_ok=True)
         return file_output

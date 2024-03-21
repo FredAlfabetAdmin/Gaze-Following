@@ -1,0 +1,80 @@
+3:20 warnings on Marvin L and R.
+4:20 L drops Marvin.
+4:36 R drops Marvin.
+5:12 warnings on Herbert L and R.
+6:23 L and R drops Herbert.
+
+==============================
+Start 10:30 (Note: local webcam.)
+Restarted Calibration at 10:34.
+Calibration done at 10:36.
+Started first experiment at 10:42.
+10:44 Restarted training.
+Second round at started at 10:46.
+Second round finished at 10:47.
+
+Full Experiment at 10:49.
+First round started at 10:49
+First round finished at 10:53
+
+Second round started at 10:53
+Second round finished at 10:56
+
+Third round started at 10:57
+Third round finished at 11:00
+
+Fourth round started at 11:00
+Fourth round finished at 11:04
+
+Fifth round started at 11:04
+Fifth round finished at 11:08
+
+Sixth round started at 11:08
+Sixth round finished at 11:12
+
+Seventh round started at 11:12
+Seventh round finished at 11:16
+
+Eight round started at 11:16
+Eight round finished at 11:20
+
+Nineth round started at 11:20
+Nineth round finished at 11:23
+
+Tenth round started at 11:24
+Tenth round finished at 11:27
+
+Kept robot alive for 20 minutes [11:27 - 11:47] but no code execution. So far, all seems OK.
+--------
+Calibration 11:47 - 11:49
+
+Full Experiment at 11:50
+First round started at 11:51
+First round finished at 11:54
+
+Second round started at 11:54
+Second round finished at 11:58
+
+Third round started at 11:58
+Third round finished at 12:02
+
+Fourth round started at 12:02
+Fourth round finished at 12:06
+
+Fifth round started at 12:06
+Fifth round finished at 12:10
+
+Sixth round started at 12:10
+Sixth round finished at 12:13
+
+Seventh round started at 12:14
+Seventh round finished at 12:17
+
+Eight round started at 12:17
+Eight round finished at 12:21
+
+Nineth round started at 12:21
+Nineth round finished at 12:25
+
+Tenth round started at 12:25
+Tenth round finished at 12:29

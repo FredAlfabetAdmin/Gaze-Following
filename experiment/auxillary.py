@@ -2,6 +2,7 @@ import os
 import json
 import pandas as pd
 import time
+import cv2 as cv
 
 # Pretty prints the current stage in the terminal
 def show_current_stage(value):
@@ -27,8 +28,8 @@ def confirm_ready():
 
 # This function appends data to the end of a file (useful for saving trialdata)
 folder_data = './data/'
-def dump_trialset_to_json(data, trial_set, participant_id):
-    with open(get_participant_folder(participant_id) + f'trial_info_{trial_set}.json', 'w') as f:
+def dump_trialset_to_json(data, video_name):
+    with open(video_name + f'_round_info.json', 'w') as f:
         json.dump(data, f)
 
 # This function creates the data folder and the folder for the data of a specific participant
@@ -59,3 +60,31 @@ def append_info_to_list(_frameless_list, _i):
     _frameless_list.append(_frameless_data)
     _i += 1
     return _frameless_list, _i
+
+def get_brio_id():
+    v4l2path = "/sys/class/video4linux/"
+    for camera_id in sorted(os.listdir(v4l2path)):
+        camera_path = v4l2path + camera_id + '/name'
+        camera_name = open(camera_path, 'r').read()
+        return 0
+        '''
+        if "BRIO" in camera_name:
+            camera_id = int(camera_id.replace('video',''))
+            cap = cv.VideoCapture(camera_id)
+            cap.set(cv.CAP_PROP_FOURCC, cv.VideoWriter_fourcc('M', 'J', 'P', 'G')) 
+            cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
+            cap.set(cv.CAP_PROP_FRAME_HEIGHT,1080)
+            cap.set(cv.CAP_PROP_FPS, 60)
+
+            # Get the resolution
+            width = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
+            height = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
+            fps = int(cap.get(cv.CAP_PROP_FPS))
+            #print(f"Resolution W: {width} - H: {height} - FPS: {fps}")
+            if width < 1920 or height < 1080 or fps < 60:
+                #print(f'cameraID: {camera_id} does not support 1080p 60fps - w:{width}, h:{height}, fps:{fps}')
+                pass
+            else:
+                print(f'cameraID: {camera_id} supports 1080p 60fps - w:{width}, h:{height}, fps:{fps}')
+                return camera_id
+        '''

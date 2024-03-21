@@ -8,29 +8,14 @@ import os
 
 class Threader():
     resulting_output = {}
+    key_pressed = None
+    #thread_stop = True
     def set_resulting_output(self, value):
         self.resulting_output = value
     def get_resulting_output(self):
         return self.resulting_output
-    
-    # This function if for listening to the keystrokes.
-    def start_listening(self, args):
-        video_recorder = args[0]
-        thread_stop = threading.Event()
 
-        while not video_recorder.get_is_currently_recording():
-            print("[THREADING] Awaiting Start of Recording")
-            time.sleep(1)
-        
-        # Create threads for script logic and timer, passing the shared flag
-        script_thread = threading.Thread(target=self.await_keypress, args=(thread_stop,))
-        timer_thread = threading.Thread(target=self.timer, args=(thread_stop,))
-
-        script_thread.start()
-        timer_thread.start()
-        script_thread.join()
-        timer_thread.join()
-        
+    ############# PARALLELIZATION #############
     # This function runs two events in parallel.
     def parallel(self, first_event, second_event, first_args = None, second_args = None):
         if first_args == None:
@@ -70,29 +55,92 @@ class Threader():
         second_thread.join()
         third_event.join()
 
-    # This function awaits the actual key pressed
-    def await_keypress(self, thread_stop):
-        start_time = time.time()
-        print('Start time: {start_time}')
-        output = {'valid':False, 'reason': 'initialization', 'duration':-1}
-        while not thread_stop.is_set():
-            self.listen_to_key() # I'm afraid that this will not continue with the code at the same time. Perhaps Parallel?
+    ############# KEY PRESS RECORDER #############
+    # This function if for listening to the keystrokes.
+    def start_listening(self):
+        '''
+        global thread_stop
+        thread_stop = True
+        #thread_stop = threading.Event()
 
+        # while not video_recorder.get_is_currently_recording():
+        #     print("[THREADING] Awaiting Start of Recording")
+        #     time.sleep(1)
+        
+        # Create threads for script logic and timer, passing the shared flag
+        #self.triple_parallel(self.listen_to_key, self.await_keypress, self.timer)
+
+        # script_thread = threading.Thread(target=self.await_keypress)
+        # timer_thread = threading.Thread(target=self.timer)
+
+        # script_thread.start()
+        # timer_thread.start()
+        # script_thread.join()
+        # timer_thread.join()
+        '''
+        self.listen_for_keys()
+        
+    def show_press(self, _key):
+        lr = (_key == keyboard.Key.left or _key == keyboard.Key.right)
+        print(f'Key: {_key} - LR: {lr}')
+
+        if lr:
+            self.key_pressed = _key
+            #print('stopped?')
+            return False
+
+    def listen_for_keys(self):
+        self.set_resulting_output({'valid':False, 'reason': 'initialization', 'duration':-1})
+
+        l = keyboard.Listener(on_press = self.show_press, suppress = True)
+        l.start()        
+        start_time = time.time()
+        while l.is_alive() and time.time() - start_time < 4:
+            time.sleep(0.001)
+        
+        if l.is_alive():
+            self.set_resulting_output({'valid':False, 'reason': 'overtime', 'duration':time.time() - start_time})
+            print('Response time exceeded 4 seconds')
+            l.stop()
+        else:
+            if self.key_pressed == keyboard.Key.left:
+                reason = 'left'
+            else:
+                reason = 'right'
+            self.set_resulting_output({'valid':True, 'reason': reason, 'duration':time.time() - start_time})
+            #print('key was pressed')
+    
+    '''
+    # This function awaits the actual key pressed
+    def await_keypress(self):#, thread_stop):
+        global thread_stop
+        start_time = time.time()
+        print(f'Start time: {start_time}')
+        output = {'valid':False, 'reason': 'initialization', 'duration':-1}
+        self.set_resulting_output(output)
+        #while not thread_stop.is_set():
+        #self.listen_to_key()
+        while thread_stop:
+            #print('hi')
             # Check if the time limit is reached
             elapsed_time = time.time() - start_time
             max_duration = 4
             if elapsed_time >= max_duration:
                 print(f"[THREADING] Time limit of {max_duration} seconds exceeded")
                 output = {'valid':False, 'reason': 'overtime', 'duration':time.time() - start_time}
-                thread_stop.set()
+                self.set_resulting_output(output)
+                #thread_stop = False #thread_stop.set()
                 break
+        thread_stop=False
+        output = self.get_resulting_output()
         print(f"[THREADING] Keystroke: {output['reason']} - Took: {output['duration']}")
-        self.set_resulting_output(output)
 
-    def timer(self, thread_stop):
+    def timer(self):
         i = 0
+        global thread_stop, start_time
         start_time = time.time()
-        while not thread_stop.is_set():
+        #while not thread_stop.is_set():
+        while thread_stop:
             print(f"Time passed: {str(time.time() - start_time)[:5]}")
             time.sleep(0.05)
             i+=1
@@ -100,12 +148,18 @@ class Threader():
         
     # This function checks which key was pressed
     def on_press(self, _key):
+        global thread_stop
         lr = (_key == keyboard.Key.left or _key == keyboard.Key.right)
-        self.check_key_left_right(_key)
+        #self.check_key_left_right(_key)
         if lr:
             global key
+            thread_stop = False
             key = _key.name
-            self.on_release(_key)    
+            self.on_release(_key)
+                        
+            output = {'valid':True, 'reason': key, 'duration':time.time() - start_time}
+            self.set_resulting_output(output)
+            #keyboard.Listener.stop(self)
         return not lr
 
     # Required function for the keyboard Listener
@@ -119,16 +173,14 @@ class Threader():
                 on_release=self.on_release,
                 suppress=True) as listener:
             listener.join()
-
-        listener = keyboard.Listener(
-            on_press=self.on_press,
-            on_release=self.on_release)
-        listener.start()
-
+        print('still here')
         # enums
         #Key.left:  65361
         #Key.right: 65363
         return key
+    '''
+
+############# IMAGE PROCESSING #############
 
 # This function is a small passthrough wrapper for writing images 
 def wsf(arguments):

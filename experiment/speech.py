@@ -21,8 +21,32 @@ def talk_right():
     talk("Please tap the " + "right" + "arrow")
 
 def talk_ready():
-    talk("When ready, please click Y")
+    talk("When ready, please click Y and then ENTER")
     print("[SPEECH] Request Ready")
+
+def talk_existing_participant():
+    talk("Participant already has a folder. Check with experimenter.")
+    print("[SPEECH] Request Ready")
+
+def finished_round():
+    talk("Round finished.")
+    print("[SPEECH] Round finished")
+
+def talk_change_eyetracker():
+    talk("Five rounds have finished. Please contact the researcher for changing the eye-tracker. Press Y and then ENTER to continue.")
+    print("[SPEECH] Finished 5 rounds")
+
+def talk_wrong_key():
+    talk("That key was the wrong key.")
+    print("[SPEECH] Wrong key pressed")
+
+def talk_response_slow():
+    talk("You took too long to respond.")
+    print("[SPEECH] Response time too slow")
+
+def talk_is_training():
+    talk("The following trials are training. Feedback will be given on pressing the wrong buttons or taking too long. This will only happen for the training.")
+    print("[SPEECH] Trials are training.")
 
 def talk(value):
     pepper.tts.request(NaoqiTextToSpeechRequest(value))

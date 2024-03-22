@@ -66,8 +66,8 @@ def get_brio_id():
     for camera_id in sorted(os.listdir(v4l2path)):
         camera_path = v4l2path + camera_id + '/name'
         camera_name = open(camera_path, 'r').read()
-        return 0
-        '''
+        #return 0
+        #'''
         if "BRIO" in camera_name:
             camera_id = int(camera_id.replace('video',''))
             cap = cv.VideoCapture(camera_id)
@@ -87,4 +87,4 @@ def get_brio_id():
             else:
                 print(f'cameraID: {camera_id} supports 1080p 60fps - w:{width}, h:{height}, fps:{fps}')
                 return camera_id
-        '''
+        #'''

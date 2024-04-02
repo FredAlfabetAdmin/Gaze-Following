@@ -1,7 +1,7 @@
 import queue
 import cv2
 from sic_framework.core.message_python2 import CompressedImageMessage
-from sic_framework.devices import Nao
+from sic_framework.devices import Nao, Pepper
 from sic_framework.devices.common_naoqi.naoqi_camera import NaoqiCameraConf
 
 imgs = queue.Queue()
@@ -14,7 +14,7 @@ def on_image(image_message: CompressedImageMessage):
 # Create camera configuration using vflip to flip the image vertically
 conf = NaoqiCameraConf(vflip=1) # You can also adjust the brightness, contrast, sharpness, etc. See "NaoqiCameraConf" for more
 
-nao = Nao(ip="10.0.0.55", top_camera_conf=conf)
+nao = Pepper(ip="10.0.0.148", top_camera_conf = NaoqiCameraConf(vflip=1, res_id=2))#, top_camera_conf=conf)
 nao.top_camera.register_callback(on_image)
 
 while True:

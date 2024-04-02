@@ -18,14 +18,16 @@ import time
 import pandas as pd
 import sys
 
-folder_name = './calibration_images_output/'
+#from experiment.settings import ip
+
 ip = [
     '10.0.0.148', # 148 = Alan
     '10.0.0.197', # 197 = Herbert
     '10.0.0.165', # 197 = Marvin
-    '10.15.3.144' # 144 = Marvin
+    '10.15.3.144', # 144 = Marvin,
+    '10.15.2.168'
     ][0]
-
+folder_name = './calibration_images_output/'
 
 # Pepper preparation
 conf = NaoqiCameraConf(vflip=0, auto_focus=True) # You can also adjust the brightness, contrast, sharpness, etc. See "NaoqiCameraConf" for more
@@ -36,7 +38,12 @@ nao.autonomous.request(NaoBasicAwarenessRequest(False))
 nao.autonomous.request(NaoBackgroundMovingRequest(False))
 
 # Added moving the arms back down as to prevent overheating of the arms
+#nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["LShoulderRoll"], recorded_times=[[0, 1]])))
+#nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["RShoulderRoll"], recorded_times=[[0, 1]])))
+
 nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["LShoulderRoll"], recorded_times=[[0, 1]])))
 nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["RShoulderRoll"], recorded_times=[[0, 1]])))
+
+#nao.autonomous.request(NaoRestRequest())
 
 print("FIN with dropping arms")

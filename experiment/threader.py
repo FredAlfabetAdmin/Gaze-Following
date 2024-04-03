@@ -200,20 +200,4 @@ def write_single_frame(i, frame, video_name,_4K = True):
     #q.put([i, frame, video_name, _4K])
     Thread(target=wsf, args=((i, frame, video_name,_4K),)).start()
 
-def process():
-    global q, activearguments
-    while active or len(q) != 0:
-        if len(q) != 0:
-            wsf([q.get()])
-
 q = queue.Queue()
-active = False
-def start_processing_images():
-    global q, active
-    active = True
-    #Thread(target=process).start()
-
-def set_active(_active):
-    global active
-    if active: start_processing_images()
-    active = _active

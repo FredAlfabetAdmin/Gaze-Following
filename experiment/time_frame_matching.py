@@ -37,12 +37,13 @@ def merge_infos(frame_info: pd.DataFrame, camera_info: pd.DataFrame, is_calibrat
     #frame_info = frame_info.reset_index()
     #frame_info = frame_info.rename(columns={frame_info.columns[0]: 'trial_number'})
     camera_info['ID'] = camera_info['ID'].astype("string")
-    camera_info['time'] = pd.to_datetime(camera_info['time'], unit='s')
+    camera_info['time'] = pd.to_datetime(camera_info['time'], unit='s') + pd.Timedelta('02:00:00')
     camera_info = camera_info.sort_values('time')
-    frame_info['start'] = pd.to_datetime(frame_info['start'], unit='s')
-    frame_info['end'] = pd.to_datetime(frame_info['end'], unit='s')
+    frame_info['start'] = pd.to_datetime(frame_info['start'], unit='s') + pd.Timedelta('02:00:00')
+    frame_info['end'] = pd.to_datetime(frame_info['end'], unit='s') + pd.Timedelta('02:00:00')
     if not is_calibration:
-        frame_info['duration'] = pd.to_datetime(frame_info['duration'], unit='s')
+        #frame_info['duration'] = pd.to_datetime(frame_info['duration'], unit='s')
+        frame_info['duration'] = frame_info['duration']
     
     # Create a boolean mask indicating which rows fall within the specified ranges
     within_ranges = (camera_info['time'].values[:, np.newaxis] >= frame_info['start'].values) & (camera_info['time'].values[:, np.newaxis] <= frame_info['end'].values)

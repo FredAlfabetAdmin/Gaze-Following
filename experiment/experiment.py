@@ -22,6 +22,7 @@ import sys
 import queue
 from sic_framework.devices import Pepper
 from sic_framework.devices.common_naoqi.naoqi_motion_recorder import NaoqiMotionRecorderConf
+import datetime
 
 from sic_framework.core.message_python2 import CompressedImageMessage
 #from sic_framework.devices.common_naoqi.naoqi_camera import NaoqiCameraConf
@@ -58,7 +59,7 @@ def execute_set_of_trials(args):
     # Confirm if the participant is ready to start a new trial
     Threader().parallel(confirm_ready, talk_ready)
 
-    time.sleep(3)
+    time.sleep(3)   
     
     # If needed, grab a subset of the trials
     trials = create_random_trials()

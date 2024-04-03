@@ -65,7 +65,7 @@ def talk(value):
 
 def talk_intro(value):
     print(f"[SPEECH] Focus {value}")
-    talk(f"Look at my head camera. Now focus on {value}")
+    talk(f"Get Ready! Now focus on {value}")
 
 def talk_preparations():
     print(f"[SPEECH] Confirmation Module")

@@ -176,7 +176,6 @@ def record_pepper(video_recorder: Recorder):
         i_await += 1
     print("[PEPPER] Starting to calibrate video")
     
-    set_active(True)
     img = imgs.get()
     print(f"PEPPER SHAPE: {img.shape}")
     while video_recorder.get_currently_recording():
@@ -186,7 +185,6 @@ def record_pepper(video_recorder: Recorder):
         write_single_frame(i, img[..., ::-1], video_recorder.get_video_name(), _4K = False)
     print("[PEPPER] Ended video recording loop Pepper")
     cv.destroyAllWindows()    
-    set_active(False)
     print(f'[PEPPER] Starting to write the Pepper dataframe to IO ({len(pepper_frameless)} items)')
     save_dataframe_to_csv(video_recorder.get_video_name(), pepper_frameless, 'pepper', video_recorder.get_is_eyetracker(), video_recorder.get_calibration_formal_mode())
     print("[PEPPER] Finished saving images from Pepper")

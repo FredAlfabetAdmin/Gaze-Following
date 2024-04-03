@@ -60,6 +60,7 @@ def talk_eyetracker_status(has_eyetracker):
     time.sleep(0.3)
     talk(f"{appender}")
 
+
 def talk(value):
     pepper.tts.request(NaoqiTextToSpeechRequest(value))
 

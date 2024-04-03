@@ -25,6 +25,7 @@ from threader import Threader, write_single_frame, set_active, start_processing_
 from settings import participant_id, ip, has_eyetracker, is_training
 from tablet import show_tablet_empty, set_pepper_tablet
 
+
 ############################################################
 def calibrate():
     df = pd.DataFrame(columns=['time', 'frame_id'])
@@ -48,7 +49,6 @@ def run_test(video_recorder: Recorder):
     current_focus_point = 0
     time_inbetween = 4
     #next_item_times = []
-
     print('In run test')
     '''
     focus_point = [
@@ -86,12 +86,6 @@ def run_test(video_recorder: Recorder):
         'please look at my head camera',
         'please look at my face']
     #'''
-    
-    # Start recording the video
-    # print(video_recorder.get_currently_recording())
-    # while not video_recorder.get_currently_recording():
-    #     print("[EXPERIMENT-RECORDER] WARNING: Currently not recording.")
-    #     time.sleep(1)
 
     time.sleep(2)
     nao.tts.request(NaoqiTextToSpeechRequest('please get in front of the Pepper'))
@@ -129,6 +123,7 @@ def run_test(video_recorder: Recorder):
 
             # Start the new instruction
             print()
+
             current_focus_point += 1
               
             if current_focus_point == len(focus_point):
@@ -150,11 +145,7 @@ def run_test(video_recorder: Recorder):
     print(round_info)
     data = pd.DataFrame(round_info) 
     print(data)
-    #data_experiment_round_info = pd.concat([data_experiment_round_info, data])
     data.to_csv(video_recorder.get_video_name() + 'round_info.csv', sep = ';')
-
-    #save_dataframe_to_csv(next_item_times, video_recorder.get_video_name() + 'data_focus_times')
-    #video_recorder.get_is_eyetracker()
 
     nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0], recorded_joints=["LShoulderRoll"], recorded_times=[[0]])))
     nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0], recorded_joints=["RShoulderRoll"], recorded_times=[[0]])))
@@ -194,15 +185,15 @@ imgs = queue.Queue()
 
 # Pepper preparation
 nao = Pepper(ip,top_camera_conf = NaoqiCameraConf(vflip=0, res_id=2))#, motion_record_conf = conf_rec, top_camera_conf=conf_cam)
+
 nao.top_camera.register_callback(on_image)
 nao.autonomous.request(NaoWakeUpRequest())
 nao.autonomous.request(NaoBasicAwarenessRequest(False))
 nao.autonomous.request(NaoBackgroundMovingRequest(False))
-#nao.top_camera.register_callback(on_image)
 
 set_pepper_tablet(nao)
-#show_tablet_vu_logo()
 show_tablet_empty()
+
 
 # Prepare the recorder
 is_eyetracker = has_eyetracker
@@ -230,11 +221,6 @@ if video_recorder.participant_id == -1:
         raise Exception
 
 threader.triple_parallel(video_recorder.start_video_recording, record_pepper, run_test, second_args=video_recorder, third_args=video_recorder)
-#threader.triple_parallel(run_nothing, run_nothing, run_test, third_args=video_recorder)
-#nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["LShoulderRoll"], recorded_times=[[0, 1]])))
-#nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["RShoulderRoll"], recorded_times=[[0, 1]])))
-
-#video_recorder.stop_video_recording()
 print("[CALIBRATION] Finished executing the calibration")
 
 nao.tts.request(NaoqiTextToSpeechRequest('Saved images. Calibration test is over.'))

@@ -128,7 +128,6 @@ def execute_set_of_trials(args):
             # If wrong key press:
             if not trial['result'] and trial_keystroke['valid']:
                 talk_wrong_key()
-            
             if trial['result']:
                 talk_response_correct()
 
@@ -156,6 +155,7 @@ def execute_single_trial(args):# first_event, second_event, current_trial):
     
 imgs = queue.Queue()
 
+
 def on_image(image_message: CompressedImageMessage):
     imgs.put(image_message.image)
 
@@ -171,43 +171,35 @@ def record_pepper(video_recorder: Recorder):
         i_await += 1
     print("[PEPPER] Starting to calibrate video")
     
-    set_active(True)
     img = imgs.get()
     print(f'PEPPER Camera Resolution: {img.shape}')
     if img.shape[0] < 480 or img.shape[1] < 640:
         
         raise Exception("PEPPER CAMERA DOES NOT RUN AT REQUIRED RESOLUTION!")
     while video_recorder.get_currently_recording():
-        #pass
         img = imgs.get()
         pepper_frameless, _ = append_info_to_list(pepper_frameless, '{:07}'.format(int(i)))
         i += 1
         write_single_frame('{:07}'.format(i), img[..., ::-1], video_recorder.get_video_name(), _4K = False)
     print("[PEPPER] Ended video recording loop Pepper")
     cv.destroyAllWindows()    
-    set_active(False)
     print(f'[PEPPER] Starting to write the Pepper dataframe to IO ({len(pepper_frameless)} items)')
     save_dataframe_to_csv(video_recorder.get_video_name(), pepper_frameless, 'pepper', video_recorder.get_is_eyetracker(), video_recorder.get_calibration_formal_mode())
-    #save_dataframe_to_csv(pepper_frameless, video_recorder.get_video_name() + 'pepper')
     print("[PEPPER] Finished saving images from Pepper")
-
 
 #------------------------------- CODE: -------------------------------#
      
 # Variables
 port = 8080
 folder_name = './experiment_images_output/'
+imgs = queue.Queue()
 
 # Pepper device setup
-#conf_rec = NaoqiMotionRecorderConf(use_sensors=True, use_interpolation=True, samples_per_second=60)
-#conf_cam = NaoqiCameraConf(vflip=1) # You can also adjust the brightness, contrast, sharpness, etc. See "NaoqiCameraConf" for more
 pepper = Pepper(ip,top_camera_conf = NaoqiCameraConf(vflip=0, res_id=2))#, motion_record_conf = conf_rec, top_camera_conf=conf_cam)
 pepper.top_camera.register_callback(on_image)
 pepper.autonomous.request(NaoWakeUpRequest())
 pepper.autonomous.request(NaoBasicAwarenessRequest(False))
 pepper.autonomous.request(NaoBackgroundMovingRequest(False))
-
-imgs = queue.Queue()
 
 # Preparations
 show_current_stage("Starting preparations")
@@ -233,7 +225,6 @@ if participant_id == -1:
     print("Warning: participant ID is currently at default (-1)")
 
 create_data_folders(participant_id)
-
 
 is_eyetracker = has_eyetracker
 training = is_training
@@ -281,3 +272,4 @@ else:
 show_current_stage("[EXPERIMENT] END OF EXPERIMENT!")
 
 print("fin")
+

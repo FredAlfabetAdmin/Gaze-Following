@@ -18,9 +18,9 @@ class Recorder():
     cap: cv.VideoCapture = None
     calibration_formal_mode = None
     is_training = False
-    #is_calibration_with_eyetracker = None
     is_eyetracker = None
     current_i = 0
+
 
     # GETTERS     
     def get_currently_recording(self):
@@ -75,22 +75,17 @@ class Recorder():
         self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, resolutions[resolution_choice]['h'])
         self.cap.set(cv.CAP_PROP_FPS, resolutions[resolution_choice]['fps'])
 
+
         # Get the resolution
         width = int(self.cap.get(cv.CAP_PROP_FRAME_WIDTH))
         height = int(self.cap.get(cv.CAP_PROP_FRAME_HEIGHT))
         fps = int(self.cap.get(cv.CAP_PROP_FPS))
         print(f"Resolution W: {width} - H: {height} - FPS: {fps}")
-        '''
-        if width < 1920 or height < 1080:
-            res_low = input("RESOLUTION IS NOT FULL QUALITY. CONFIRM CONTINUATION? [Y/n]")
-            if str.lower(res_low) != 'y':
-                raise Exception
-        '''
+
         # Only start when it is actually recording
         self.currently_recording = True
         self.finished_up_recording = False
         frameless = []
-        
         i = self.get_current_i()
         print(f"Getting value of I: {i}")
         num_frames = 0
@@ -105,14 +100,9 @@ class Recorder():
         
             # Get the current time.
             frameless, _ = append_info_to_list(frameless, '{:07}'.format(int(i)))
-            #frame_buffer.append(frame)
             write_single_frame(i, frame, self.get_video_name(), True)
             i += 1
             self.set_current_i(i)
-
-            # if len(frame_buffer) == 4:
-            #     write_frame_buffer(i, frame_buffer, self.get_video_name())
-            #     frame_buffer = []
             if cv.waitKey(1) == ord('q'): # Press 'q' on the Python Window to stop the script
                 break
             
@@ -135,7 +125,6 @@ class Recorder():
         self.set_current_i(i)
         cv.destroyAllWindows()
         print(f'[VIDEO] Starting to write the 4K dataframe to IO ({len(frameless)} items)')
-        #save_dataframe_to_csv(frameless, self.get_video_name() + '4K')
         save_dataframe_to_csv(self.get_video_name(), frameless, '4K', self.get_is_eyetracker(), self.get_calibration_formal_mode())
         print("[VIDEO] Finished saving images from 4K")
 
@@ -155,14 +144,7 @@ class Recorder():
 
     # This function generates a folder for the output of the video with a name for a video, based on the current (date-)time.
     def get_video_name(self, allow_creating_folders = True):
-        ''' 
-        # Old:
-        video_output_folder = get_participant_folder(self.participant_id)
-        file_output = video_output_folder + f'part_{self.participant_id}_trialset_{self.trial_set}_'
-        if self.get_is_training():
-            file_output += 'training_'
-        elif self.get_is_calibration():
-            file_output += 'calibration_'
+
             if self.get_is_calibration_with_eyetracker():
                 file_output += 'with_eyetracker_'
             else:
@@ -170,7 +152,6 @@ class Recorder():
         else:
             file_output += 'experiment_'
         os.makedirs(video_output_folder, exist_ok=True)
-        '''
 
         # Get the folder of this specific participant
         participant_folder = get_participant_folder(self.participant_id)
@@ -199,3 +180,4 @@ class Recorder():
     def clear_round_info_csv(self):
         path = self.get_video_name() + 'round_info.csv'
         os.remove(path)
+

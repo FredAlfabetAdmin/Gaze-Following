@@ -58,26 +58,6 @@ class Threader():
     ############# KEY PRESS RECORDER #############
     # This function if for listening to the keystrokes.
     def start_listening(self):
-        '''
-        global thread_stop
-        thread_stop = True
-        #thread_stop = threading.Event()
-
-        # while not video_recorder.get_is_currently_recording():
-        #     print("[THREADING] Awaiting Start of Recording")
-        #     time.sleep(1)
-        
-        # Create threads for script logic and timer, passing the shared flag
-        #self.triple_parallel(self.listen_to_key, self.await_keypress, self.timer)
-
-        # script_thread = threading.Thread(target=self.await_keypress)
-        # timer_thread = threading.Thread(target=self.timer)
-
-        # script_thread.start()
-        # timer_thread.start()
-        # script_thread.join()
-        # timer_thread.join()
-        '''
         self.listen_for_keys()
         
     def show_press(self, _key):
@@ -110,75 +90,6 @@ class Threader():
             self.set_resulting_output({'valid':True, 'reason': reason, 'duration':time.time() - start_time})
             #print('key was pressed')
     
-    '''
-    # This function awaits the actual key pressed
-    def await_keypress(self):#, thread_stop):
-        global thread_stop
-        start_time = time.time()
-        print(f'Start time: {start_time}')
-        output = {'valid':False, 'reason': 'initialization', 'duration':-1}
-        self.set_resulting_output(output)
-        #while not thread_stop.is_set():
-        #self.listen_to_key()
-        while thread_stop:
-            #print('hi')
-            # Check if the time limit is reached
-            elapsed_time = time.time() - start_time
-            max_duration = 4
-            if elapsed_time >= max_duration:
-                print(f"[THREADING] Time limit of {max_duration} seconds exceeded")
-                output = {'valid':False, 'reason': 'overtime', 'duration':time.time() - start_time}
-                self.set_resulting_output(output)
-                #thread_stop = False #thread_stop.set()
-                break
-        thread_stop=False
-        output = self.get_resulting_output()
-        print(f"[THREADING] Keystroke: {output['reason']} - Took: {output['duration']}")
-
-    def timer(self):
-        i = 0
-        global thread_stop, start_time
-        start_time = time.time()
-        #while not thread_stop.is_set():
-        while thread_stop:
-            print(f"Time passed: {str(time.time() - start_time)[:5]}")
-            time.sleep(0.05)
-            i+=1
-        print(f"[THREADING] I's: {i}")
-        
-    # This function checks which key was pressed
-    def on_press(self, _key):
-        global thread_stop
-        lr = (_key == keyboard.Key.left or _key == keyboard.Key.right)
-        #self.check_key_left_right(_key)
-        if lr:
-            global key
-            thread_stop = False
-            key = _key.name
-            self.on_release(_key)
-                        
-            output = {'valid':True, 'reason': key, 'duration':time.time() - start_time}
-            self.set_resulting_output(output)
-            #keyboard.Listener.stop(self)
-        return not lr
-
-    # Required function for the keyboard Listener
-    def on_release(self, _key):
-        pass
-
-    # This function enables keypresses to be recorded.
-    def listen_to_key(self):
-        with keyboard.Listener(
-                on_press=self.on_press,
-                on_release=self.on_release,
-                suppress=True) as listener:
-            listener.join()
-        print('still here')
-        # enums
-        #Key.left:  65361
-        #Key.right: 65363
-        return key
-    '''
 
 ############# IMAGE PROCESSING #############
 
@@ -191,6 +102,7 @@ def wsf(arguments):
     _i = int(i)
     frame_id = '{:07}'.format(_i)
     output_file = f'{video_name}{frame_id}.jpg'
+
     cv2.imwrite(output_file, frame) # Update this to contain the get_video_name()
     
 # This is the main function that gets called when saving a single frame to the disk.

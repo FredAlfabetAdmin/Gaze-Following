@@ -15,6 +15,7 @@ def on_image(image_message: CompressedImageMessage):
 conf = NaoqiCameraConf(vflip=1) # You can also adjust the brightness, contrast, sharpness, etc. See "NaoqiCameraConf" for more
 
 nao = Pepper(ip="10.0.0.148", top_camera_conf = NaoqiCameraConf(vflip=1, res_id=2))#, top_camera_conf=conf)
+
 nao.top_camera.register_callback(on_image)
 
 while True:

@@ -31,7 +31,6 @@ def move_pepper_right(angle = 1): # Note: This is the RIGHT arm when looking at 
 
 def move_pepper_left(angle = -1): # Note: This is the RIGHT arm when looking at Pepper, moves Pepper's LEFT arm.
     print("[MOVING] Left arm")
-
     move_joints(angle, chain[1]) # always negative
 
 def move_peppers_static():

@@ -56,17 +56,14 @@ def talk_eyetracker_status(has_eyetracker):
     appender = 'ON'
     if not has_eyetracker:
         appender = 'OFF'
-    talk(f"The following trials have the eyetracker:")
-    time.sleep(0.3)
-    talk(f"{appender}")
-
+    talk(f"The following trials have the eyetracker {appender}")
 
 def talk(value):
     pepper.tts.request(NaoqiTextToSpeechRequest(value))
 
 def talk_intro(value):
     print(f"[SPEECH] Focus {value}")
-    talk(f"Get Ready! Now focus on {value}")
+    talk(f"Get ready! Now focus on {value}")
 
 def talk_preparations():
     print(f"[SPEECH] Confirmation Module")

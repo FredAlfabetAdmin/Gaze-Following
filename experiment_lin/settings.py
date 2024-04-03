@@ -8,14 +8,13 @@ participant_id = 1
 ip = [
     # TP-Link
     '10.0.0.148', # 148 = Alan
-    '10.0.0.197', # 197 = Herbert ??
-    '10.0.0.196', # 196 = Herbert ?? - Latest
-    '10.0.0.165', # 165 = Marvin
+    '10.0.0.197', # 197 = Herbert
+    '10.0.0.165', # 197 = Marvin
 
     # VU Research Device Net
     '10.15.3.144', # 144 = Marvin
     '10.15.2.168' # Herbert
-    ][2]
+    ][0]
 
-has_eyetracker = True
+has_eyetracker = False
 is_training = False

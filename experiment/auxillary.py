@@ -36,7 +36,7 @@ def dump_trialset_to_json(data: pd.DataFrame, video_name):
     if os.path.isfile(video_name):
         data = pd.concat([data, pd.read_csv(video_name)])
     #data_experiment_round_info = pd.concat([data_experiment_round_info, data])
-    data.to_csv(video_name + 'round_info.csv', sep = ';')
+    data.to_csv(video_name, sep = ';')
 
 
 # This function creates the data folder and the folder for the data of a specific participant
@@ -49,7 +49,7 @@ def get_participant_folder(participant_id):
 
 def save_dataframe_to_csv(filename, camera_info, camera_type: str, eyetracker_mode, calibration_formal_mode):
     execute_csv(filename, camera_info, camera_type, eyetracker_mode, calibration_formal_mode)
-    print(f"[I/O] Finished writing to csv")
+    print(f"[I/O] Finished writing {camera_type} to csv")
 
 def append_info_to_list(_frameless_list, _i):
     formatted_i = '{:07}'.format(int(_i))
@@ -91,9 +91,7 @@ def get_brio_id():
         #'''
 
 def csv_with_rounds_exists(participant_id, round, eyetracker_mode, calibration_formal_mode):
-    etm = 'eye' if eyetracker_mode else 'noeye'
-    path = f'./data/part_{participant_id}/{etm}/{calibration_formal_mode}/data.csv'
+    etm = 'glasses' if eyetracker_mode else 'noglasses'
+    path = f'./data/part_{participant_id}/{etm}_{calibration_formal_mode}_data.csv'
     if os.path.exists(path):
-        data = pd.read_csv(path, sep=';')
-        if ((data['round'] == round) & (data['eyetracker_mode'] == eyetracker_mode)).any():
-            input(f'** WARNING: THIS ROUND ({round}) ALREADY EXISTS IN: {path}. CONTINUING WILL CONTAMINATE CSV!')
+        input(f"WARNING: FILE ALREADY EXISTS! {path}")

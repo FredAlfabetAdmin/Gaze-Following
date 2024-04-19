@@ -4,12 +4,13 @@ participant_id = 1
 # Participant 3 = Lin: Pilot
 # Participant 4 = Mark: Pilot
 # Participant 5 = Mark: Pilot v2
+# Participant 6 = Lin: Pilot v3
 
 ip = [
     # TP-Link
     '10.0.0.148', # 148 = Alan
     '10.0.0.197', # 197 = Herbert ??
-    '10.0.0.196', # 196 = Herbert ?? - Latest
+    '10.0.0.198', # 196 = Herbert ?? - Latest
     '10.0.0.165', # 165 = Marvin
 
     # VU Research Device Net

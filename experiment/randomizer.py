@@ -25,18 +25,18 @@ def create_random_trials():
     for comb in combinations:
         items.append(comb)
         items.append(comb[::-1])
-
-    for item in items:
-        for con in range(2):
-            for lr in range(2):
-                to_append = {
-                        'first_item':item[0],
-                        'second_item':item[1],
-                        #'primary': combination[0] if x == 0 else combination[1],
-                        'congruent': con == 0,
-                        'direction': 'left' if lr == 0 else 'right'
-                    }
-                #print(to_append)
-                trials.append(to_append)
+    for round in range(5):
+        for item in items:
+            for con in range(2):
+                for lr in range(2):
+                    to_append = {
+                            'first_item':item[0],
+                            'second_item':item[1],
+                            #'primary': combination[0] if x == 0 else combination[1],
+                            'congruent': con == 0,
+                            'direction': 'left' if lr == 0 else 'right'
+                        }
+                    #print(to_append)
+                    trials.append(to_append)
     random.shuffle(trials)
     return trials

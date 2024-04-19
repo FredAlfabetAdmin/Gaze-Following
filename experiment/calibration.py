@@ -1,12 +1,9 @@
 import queue
 import cv2
 from sic_framework.core.message_python2 import CompressedImageMessage
-from sic_framework.devices import Nao
 from sic_framework.devices.common_naoqi.naoqi_camera import NaoqiCameraConf
-from sic_framework.devices.common_naoqi.naoqi_motion import NaoqiIdlePostureRequest
-from sic_framework.devices.common_naoqi.naoqi_motion_recorder import PlayRecording, NaoqiMotionRecording, NaoqiMotionRecorderConf
-from sic_framework.devices.common_naoqi.naoqi_autonomous import NaoBasicAwarenessRequest, NaoBackgroundMovingRequest, NaoRestRequest, NaoWakeUpRequest
-from sic_framework.devices.common_naoqi.naoqi_stiffness import Stiffness
+from sic_framework.devices.common_naoqi.naoqi_motion_recorder import PlayRecording, NaoqiMotionRecording
+from sic_framework.devices.common_naoqi.naoqi_autonomous import NaoBasicAwarenessRequest, NaoBackgroundMovingRequest, NaoWakeUpRequest
 from sic_framework.devices.pepper import Pepper
 from sic_framework.devices.common_naoqi.naoqi_text_to_speech import NaoqiTextToSpeechRequest
 # The functions in this file are mostly based from the OpenVC VideoCapture tutorial, which can be found here:
@@ -16,40 +13,20 @@ import cv2 as cv
 import time
 import pandas as pd
 import sys
-import threading
 import os
 
-from auxillary import show_current_stage,  save_dataframe_to_csv, append_info_to_list, get_brio_id, dump_trialset_to_json
+from auxillary import show_current_stage,  save_dataframe_to_csv, append_info_to_list, get_brio_id
 from recorder import Recorder
-from threader import Threader, write_single_frame, set_active, start_processing_images
+from threader import Threader, write_single_frame
 from settings import participant_id, ip, has_eyetracker, is_training
 from tablet import show_tablet_empty, set_pepper_tablet
 
-
 ############################################################
-def calibrate():
-    df = pd.DataFrame(columns=['time', 'frame_id'])
-    dictionary_list = []
-    next_item_times = []
-    i = 0
-
-    start_time = time.time()
-    current_time = time.time()
-    print(f'Start time: {start_time}')
-    
-    # Save the datapoints to a file
-    df = pd.DataFrame(dictionary_list)
-    df.to_csv('./data_frames.csv', index=False)
-    df = pd.DataFrame(next_item_times)
-    df.to_csv('./data_focus_times.csv', index=False)
-    print("finished calibration recording")
-
-def run_test(video_recorder: Recorder):
+def run_calibration(video_recorder: Recorder):
     # Parameters
     current_focus_point = 0
     time_inbetween = 4
-    #next_item_times = []
-    print('In run test')
+    
     '''
     focus_point = [
         ' ',
@@ -105,16 +82,13 @@ def run_test(video_recorder: Recorder):
     start_time = time.time()
 
     # Actually execute the motions
-    i = 0
     round_info = pd.DataFrame(columns = ['start','end','speech'])
     print(f"4K Starting I: {video_recorder.get_current_i()}")
     while len(focus_point) > current_focus_point:       
         if current_time > start_time + time_inbetween:
             # Finish up the previous instruction
             print(f"4K's Finishing I: {video_recorder.get_current_i()}")
-            #passed = f'{(current_time - start_time):010}'
             print(f'Just executed: {focus_point[current_focus_point]}')
-            #print(f'Time to execute the next calibration part at {current_time} - passed: {current_time - (start_time + time_inbetween)} - Just executed: {focus_point[current_focus_point]}')
             new_data = {
                 'start': start_time,
                 'end': current_time, # This is the start_time + time_inbetween combined.
@@ -123,23 +97,19 @@ def run_test(video_recorder: Recorder):
 
             # Start the new instruction
             print()
-
             current_focus_point += 1
-              
             if current_focus_point == len(focus_point):
                 print('[CALIBRATION] Finished all instructions')
                 break
 
             print(f"Now executing: {focus_point[current_focus_point]}")
-            
             nao.tts.request(NaoqiTextToSpeechRequest(focus_point[current_focus_point]))
             start_time = time.time()
             print(f"4K's Start Time I: {video_recorder.get_current_i()}")
 
-            #print(f'[CALIBRATION] Gave new instructions')
-          
-        current_time = time.time()
-        i += 1
+        else:
+            current_time = time.time()
+            time.sleep(0.1)
 
     # Save the datapoints to a file
     print(round_info)
@@ -220,7 +190,7 @@ if video_recorder.participant_id == -1:
     if str.lower(input("WARNING: PARTICIPANT ID IS -1. CHECK IF CORRECT!! continue [Y/n]?")) != 'y':
         raise Exception
 
-threader.triple_parallel(video_recorder.start_video_recording, record_pepper, run_test, second_args=video_recorder, third_args=video_recorder)
+threader.triple_parallel(video_recorder.start_video_recording, record_pepper, run_calibration, second_args=video_recorder, third_args=video_recorder)
 print("[CALIBRATION] Finished executing the calibration")
 
 nao.tts.request(NaoqiTextToSpeechRequest('Saved images. Calibration test is over.'))

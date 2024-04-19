@@ -13,12 +13,21 @@ def set_pepper_speech(_pepper):
     pepper = _pepper
 
 def talk_left():
+    #time.sleep(0.58)# 0.7
+    time.sleep(0.577)
     print("[SPEECH] Talking Left")
-    talk("Please tap the " + "left" + "arrow")
+    #talk("Please tap the " + "left" + "arrow")
+    #print(f'activated speech at: {time.time()}')
+    talk("left")
+    #talk("left")
 
 def talk_right():
+    #time.sleep(0.58)# 0.7
+    time.sleep(0.577)#0.58
     print("[SPEECH] Talking Right")
-    talk("Please tap the " + "right" + "arrow")
+    #talk("Please tap the " + "right" + "arrow")
+    talk("right")
+    #talk("right")
 
 def talk_ready():
     talk("When ready, please click Y and then ENTER")
@@ -33,7 +42,7 @@ def finished_round():
     print("[SPEECH] Round finished")
 
 def talk_change_eyetracker():
-    talk("Five rounds have finished. Please contact the researcher for changing the eye-tracker. Press Y and then ENTER to continue.")
+    talk("This was the end of this part of the experiment. Please contact the researcher for changing the eye-tracker.")
     print("[SPEECH] Finished 5 rounds")
 
 def talk_wrong_key():

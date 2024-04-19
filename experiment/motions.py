@@ -16,7 +16,8 @@ chain = ["LShoulderRoll", "RShoulderRoll"]
 def move_joints(angle = 0, chain = chain):
     #global pepper
     pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, angle, 0], recorded_joints=[chain], recorded_times=[[0, 1, 2.5]])))
-
+   # pepper.motion_record.request(PlayRecording(
+        #NaoqiMotionRecording(recorded_angles=[angle, angle, 0], recorded_joints=[chain], recorded_times=[[0, 1, 2]])))
 def move_shoulder_pitch():
     pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0.5, 1, 1.6], recorded_joints=["RShoulderPitch"], recorded_times=[[2, 4, 6]])))
     pepper.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0.5, 1, 1.6], recorded_joints=["LShoulderPitch"], recorded_times=[[2, 4, 6]])))
@@ -31,7 +32,7 @@ def move_pepper_right(angle = 1): # Note: This is the RIGHT arm when looking at 
 
 def move_pepper_left(angle = -1): # Note: This is the RIGHT arm when looking at Pepper, moves Pepper's LEFT arm.
     print("[MOVING] Left arm")
-
+    #print(f'activated gesture at: {time.time()}')
     move_joints(angle, chain[1]) # always negative
 
 def move_peppers_static():

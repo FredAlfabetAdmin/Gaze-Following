@@ -73,13 +73,19 @@ class Threader():
         self.set_resulting_output({'valid':False, 'reason': 'initialization', 'duration':-1})
 
         l = keyboard.Listener(on_press = self.show_press, suppress = True)
-        l.start()        
+        l.start()
         start_time = time.time()
+        print('response start time', start_time)
         while l.is_alive() and time.time() - start_time < 4:
             time.sleep(0.001)
         
         if l.is_alive():
-            self.set_resulting_output({'valid':False, 'reason': 'overtime', 'duration':time.time() - start_time})
+            self.set_resulting_output({
+                'valid':False, 
+                'reason': 'overtime', 
+                'response_start':start_time, 
+                'duration':time.time() - start_time
+                })
             print('Response time exceeded 4 seconds')
             l.stop()
         else:
@@ -87,7 +93,8 @@ class Threader():
                 reason = 'left'
             else:
                 reason = 'right'
-            self.set_resulting_output({'valid':True, 'reason': reason, 'duration':time.time() - start_time})
+            self.set_resulting_output({'valid':True, 'reason': reason, 'duration':time.time() - start_time - 0.8})
+            print('response start time', time.time() - start_time)
             #print('key was pressed')
     
 
@@ -97,8 +104,11 @@ class Threader():
 def wsf(arguments):
     i, frame, video_name, _4K = arguments
     device = '4K' if _4K else 'Pepper'
-    os.makedirs(video_name + '/' + device + '/', exist_ok=True)
-    video_name += device + '/'
+    # os.makedirs(video_name + '/' + device + '/', exist_ok=True)
+    # video_name += device + '_'
+
+    video_name = video_name + device + '/'
+    os.makedirs(video_name, exist_ok=True)
     _i = int(i)
     frame_id = '{:07}'.format(_i)
     output_file = f'{video_name}{frame_id}.jpg'

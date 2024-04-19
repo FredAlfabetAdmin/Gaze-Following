@@ -19,12 +19,15 @@ def set_pepper_tablet(_pepper):
 
 def show_tablet_left():
     print(f"[TABLET] Showing Left")
-    time.sleep(0.5)
+    #time.sleep(0.23)#0.5
+    time.sleep(0.14)
+    #print(f'activated tablet at: {time.time()}')
     pepper.tablet_display_url.send_message(UrlMessage(arrow_left))
     
 def show_tablet_right():
     print(f"[TABLET] Showing Right")
-    time.sleep(0.5)
+    #time.sleep(0.23)#0.5
+    time.sleep(0.09)
     pepper.tablet_display_url.send_message(UrlMessage(arrow_right))
     
 def show_tablet_empty():

@@ -70,7 +70,7 @@ class Recorder():
                         3:{'w':1920, 'h': 1080, 'fps':60},
                         4:{'w':1280, 'h': 720, 'fps':30}               
                     }
-        resolution_choice = 3
+        resolution_choice = 2
         self.cap.set(cv.CAP_PROP_FRAME_WIDTH, resolutions[resolution_choice]['w'])
         self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, resolutions[resolution_choice]['h'])
         self.cap.set(cv.CAP_PROP_FPS, resolutions[resolution_choice]['fps'])
@@ -87,7 +87,7 @@ class Recorder():
         self.finished_up_recording = False
         frameless = []
         i = self.get_current_i()
-        print(f"Getting value of I: {i}")
+        #print(f"Getting value of I: {i}")
         num_frames = 0
         start_time = time.time()
 
@@ -111,7 +111,7 @@ class Recorder():
             elapsed_time = time.time() - start_time
             if elapsed_time >= 1.0:
                 fps = num_frames / elapsed_time
-                #print("[4K] FPS:", fps)
+                print("[4K] FPS:", fps)
 
                 # Reset variables for the next FPS calculation
                 start_time = time.time()
@@ -144,15 +144,6 @@ class Recorder():
 
     # This function generates a folder for the output of the video with a name for a video, based on the current (date-)time.
     def get_video_name(self, allow_creating_folders = True):
-
-            if self.get_is_calibration_with_eyetracker():
-                file_output += 'with_eyetracker_'
-            else:
-                file_output += 'without_eyetracker_'
-        else:
-            file_output += 'experiment_'
-        os.makedirs(video_output_folder, exist_ok=True)
-
         # Get the folder of this specific participant
         participant_folder = get_participant_folder(self.participant_id)
         os.makedirs(participant_folder, exist_ok=True)
@@ -162,17 +153,17 @@ class Recorder():
         if self.get_is_training():
             train_eye_noeye += 'training'
         elif self.get_is_eyetracker():
-            train_eye_noeye += 'eye'
+            train_eye_noeye += 'glasses'
         else:
-            train_eye_noeye += 'noeye'
-        train_eye_noeye += '/'
-        os.makedirs(train_eye_noeye, exist_ok=True)
+            train_eye_noeye += 'noglasses'
+        train_eye_noeye += '_'
+        #os.makedirs(train_eye_noeye, exist_ok=True)
 
         # Check if the current participant is doing the calibration or the formal experiment
         calibration_or_formal = train_eye_noeye
         calibration_or_formal += self.get_calibration_formal_mode()
-        calibration_or_formal += '/'
-        os.makedirs(calibration_or_formal, exist_ok=True)
+        calibration_or_formal += '_'
+        #os.makedirs(calibration_or_formal, exist_ok=True)
 
         # Return the correct folder.
         return calibration_or_formal

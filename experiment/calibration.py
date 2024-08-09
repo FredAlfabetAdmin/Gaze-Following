@@ -15,7 +15,7 @@ import pandas as pd
 import sys
 import os
 
-from auxillary import show_current_stage,  save_dataframe_to_csv, append_info_to_list, get_brio_id
+from auxillary import show_current_stage,  save_dataframe_to_csv, append_info_to_list, get_brio_id, create_data_folders
 from recorder import Recorder
 from threader import Threader, write_single_frame
 from settings import participant_id, ip, has_eyetracker, is_training
@@ -55,6 +55,7 @@ def run_calibration(video_recorder: Recorder):
         'please look at  left elbow',
         'please look at  right elbow',
         'calibration finished! thank you very much!',
+        '',
         '']
 
     '''
@@ -177,8 +178,10 @@ video_recorder.set_is_training(False)
 
 threader = Threader()
 
-if len(os.listdir(video_recorder.get_video_name())) > 0:
-    input("WARNING: DIRECTORY ALREADY EXISTS!")
+create_data_folders(participant_id)
+
+#if len(os.listdir(video_recorder.get_video_name())) > 0:
+#    input("WARNING: DIRECTORY ALREADY EXISTS!")
 #csv_with_rounds_exists(video_recorder.participant_id, trial_round, video_recorder.get_is_eyetracker(), video_recorder.get_calibration_formal_mode())
 
 # Execute the actual calibration

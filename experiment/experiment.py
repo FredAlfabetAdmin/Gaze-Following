@@ -49,8 +49,6 @@ def execute_set_of_trials(args):
         trials = trials[0:5]
     current_trial = 0
 
-    #trials = trials[0:3]
-
     # Execute all the trials in the trials set
     show_current_stage(f"Executing trials nr. {trial_round} - Eye-tracker on: {video_recorder.get_is_eyetracker()}")
     print("[EXPERIMENT] NOW RECORDING!")
@@ -116,9 +114,10 @@ def execute_set_of_trials(args):
             # If response too slow:
             if trial_keystroke['reason'] == 'overtime':
                 talk_response_slow()
-            
-            # If wrong key press:
-
+            if trial_keystroke['valid'] and not trial['result']:
+                talk_wrong_key()
+            if trial_keystroke['valid'] and trial['result']:
+                talk_response_correct()
 
         # Reset the PepperS
         show_tablet_empty()

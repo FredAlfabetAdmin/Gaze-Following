@@ -18,15 +18,16 @@ import time
 import pandas as pd
 import sys
 
-#from experiment.settings import ip
+from settings import ip
 
-ip = [
+_ip = [
     '10.0.0.148', # 148 = Alan
     '10.0.0.197', # 197 = Herbert
     '10.0.0.165', # 197 = Marvin
     '10.15.3.144', # 144 = Marvin,
-    '10.15.2.168'
-    ][0]
+    '10.15.2.168',
+    '10.15.3.176' # Alan
+    ][5]
 folder_name = './calibration_images_output/'
 
 # Pepper preparation
@@ -41,9 +42,18 @@ nao.autonomous.request(NaoBackgroundMovingRequest(False))
 #nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["LShoulderRoll"], recorded_times=[[0, 1]])))
 #nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["RShoulderRoll"], recorded_times=[[0, 1]])))
 
-nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["LShoulderRoll"], recorded_times=[[0, 1]])))
-nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 0], recorded_joints=["RShoulderRoll"], recorded_times=[[0, 1]])))
+nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, 1], recorded_joints=["LShoulderRoll"], recorded_times=[[0, 1]])))
+nao.motion_record.request(PlayRecording(NaoqiMotionRecording(recorded_angles=[0, -1], recorded_joints=["RShoulderRoll"], recorded_times=[[0, 1]])))
 
-#nao.autonomous.request(NaoRestRequest())
+time.sleep(10)
+nao.tts.request(NaoqiTextToSpeechRequest('40 seconds left'))
+time.sleep(10)
+nao.tts.request(NaoqiTextToSpeechRequest('30 seconds left'))
+time.sleep(10)
+nao.tts.request(NaoqiTextToSpeechRequest('20 seconds left'))
+time.sleep(10)
+nao.tts.request(NaoqiTextToSpeechRequest('10 seconds left'))
+time.sleep(10)
+nao.autonomous.request(NaoRestRequest())
 
 print("FIN with dropping arms")

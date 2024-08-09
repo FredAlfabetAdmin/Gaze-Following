@@ -1,10 +1,10 @@
-participant_id = 1
+participant_id = 35
 
-# Participant -1, 0, 1 and 2 are test accounts
-# Participant 3 = Lin: Pilot
-# Participant 4 = Mark: Pilot
-# Participant 5 = Mark: Pilot v2
-# Participant 6 = Lin: Pilot v3
+# Participants 1 until and including 8 started with glasses.
+# 9 did NOT start with glasses but instead did the L2CS first.
+# From 17 onwards, L2CS first
+# 32 started with eyetracker
+
 
 ip = [
     # TP-Link
@@ -15,8 +15,9 @@ ip = [
 
     # VU Research Device Net
     '10.15.3.144', # 144 = Marvin
-    '10.15.2.168' # Herbert
-    ][2]
-
-has_eyetracker = True
-is_training = False
+    '10.15.2.168', # Herbert
+    '10.15.3.176'  # Alan
+    ][0]
+    
+has_eyetracker = False
+is_training = True

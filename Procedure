@@ -1,0 +1,30 @@
+Procedure:
+
+Before moving the robot to the room:
+-Make sure that the robot is connected to VU-ResearchDeviceNet. 
+-Also confirm that the laptop is connected to the same WiFi.
+-Bring the laptop, the robot, charger for the laptop, charger for the robot and the keyboard (and the Brio 4K camera).
+-Bring the gift-cards as well as the procedure etc.
+
+In the lab:
+-Make sure that the robot and the laptop are connected to the correct WiFi.
+-Place the Robot in the correct position.
+-Place the keyboard onto the standing desk.
+
+For the laptop setup:
+-Connect the 4K camera to the laptop
+-Connect the keyboard to the laptop
+-Confirm that both are working
+-conda activate SIC
+-redis-server conf/redis/redis.conf
+
+Prep for the experiment:
+-Check the settings to confirm the correct participant ID
+-Let Lin do the scan with the eyetracker
+-TRAINING
+-Calibration
+-Experiment
+-CHANGE EYE-TRACKER
+-Calibration
+-Experiment
+
